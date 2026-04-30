@@ -1,0 +1,1808 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sprint Monitoring Report Generator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#fff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb;
+    --green:#16a34a; --green-bg:#dcfce7; --amber:#d97706; --amber-bg:#fef3c7;
+    --red:#dc2626; --red-bg:#fee2e2; --blue:#2563eb; --blue-bg:#dbeafe;
+    --purple:#7c3aed; --purple-bg:#ede9fe; --teal:#0d9488; --teal-bg:#ccfbf1;
+    --slate:#475569;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,Segoe UI,Roboto,Inter,sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55}
+
+  /* Header */
+  header{background:linear-gradient(135deg,#0f172a,#166534);color:#fff;padding:28px 32px;border-bottom:4px solid #16a34a}
+  header h1{margin:0 0 6px;font-size:24px;font-weight:600;letter-spacing:-.2px}
+  header .sub{color:#cbd5e1;font-size:13px}
+  header .pillrow{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  header .hp{background:rgba(255,255,255,.12);padding:5px 12px;border-radius:999px;font-size:12px;color:#e2e8f0}
+
+  /* Container */
+  .container{max-width:1480px;margin:0 auto;padding:24px 32px}
+
+  /* Nav */
+  .nav{position:sticky;top:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 32px;z-index:50;display:flex;gap:6px;overflow-x:auto;font-size:12px}
+  .nav a{padding:6px 12px;border-radius:6px;color:var(--slate);text-decoration:none;white-space:nowrap}
+  .nav a:hover{background:#f1f5f9;color:var(--ink)}
+  .nav .sep{display:inline-block;width:1px;background:var(--line);margin:0 4px}
+
+  /* Section */
+  section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:22px;box-shadow:0 1px 2px rgba(0,0,0,.03);scroll-margin-top:60px}
+  section h2{margin:0 0 4px;font-size:18px;font-weight:600}
+  section .lede{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .section-divider{padding:18px 0 6px;border-bottom:2px solid var(--line);margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+  .section-divider h2{margin:0;font-size:22px;font-weight:600;color:var(--ink)}
+  .section-divider .pill{background:var(--blue);color:#fff;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:500}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .kpi{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:14px}
+  .kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:500}
+  .kpi .v{font-size:22px;font-weight:600}
+  .kpi .d{font-size:11px;color:var(--muted);margin-top:3px}
+  .kpi.green .v{color:var(--green)} .kpi.amber .v{color:var(--amber)}
+  .kpi.red .v{color:var(--red)} .kpi.blue .v{color:var(--blue)}
+
+  /* Badges */
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:500}
+  .b-green{background:var(--green-bg);color:var(--green)} .b-amber{background:var(--amber-bg);color:var(--amber)}
+  .b-red{background:var(--red-bg);color:var(--red)} .b-blue{background:var(--blue-bg);color:var(--blue)}
+  .b-purple{background:var(--purple-bg);color:var(--purple)} .b-teal{background:var(--teal-bg);color:var(--teal)}
+  .b-grey{background:#f1f5f9;color:#475569}
+
+  /* Grids */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+  @media(max-width:980px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+  /* Charts */
+  .chartwrap{position:relative;height:280px}
+  .chartwrap.tall{height:340px}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#f8fafc;text-align:left;padding:9px 10px;font-weight:500;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line);position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap}
+  th:hover{background:#eef2f6}
+  th.sort-asc::after{content:" \25B2";color:var(--blue)}
+  th.sort-desc::after{content:" \25BC";color:var(--blue)}
+  td{padding:9px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  tbody tr:hover{background:#f9fafb}
+  .tablewrap{max-height:600px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+
+  /* Filters */
+  .filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
+  .filters input,.filters select{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;color:var(--ink);font-family:inherit;outline:none}
+  .filters input:focus,.filters select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-bg)}
+  .filters input[type=search]{flex:1;min-width:200px}
+  .filters .clear{background:#f1f5f9;border:1px solid var(--line);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;color:#475569}
+  .filters .clear:hover{background:#e2e8f0}
+
+  /* Misc */
+  .progress{height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:5px}
+  .progress > span{display:block;height:100%;background:var(--blue);border-radius:99px}
+  .progress.green > span{background:var(--green)}
+  .progress.amber > span{background:var(--amber)} .progress.red > span{background:var(--red)}
+  .narrative{font-size:13px;line-height:1.65;color:#334155}
+  .narrative p{margin:0 0 10px}
+  .narrative strong{color:var(--ink)}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:900px){.twocol{grid-template-columns:1fr}}
+  .list-clean{margin:6px 0 0 18px;padding:0;font-size:13px}
+  .list-clean li{margin-bottom:5px;color:#334155}
+  .footnote{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic}
+  .num{font-variant-numeric:tabular-nums}
+  .mute{color:var(--muted)}
+  .greenbox{background:#dcfce7;border-left:3px solid var(--green);padding:10px 14px;border-radius:6px;font-size:13px;color:#14532d;margin-bottom:12px}
+  .infobox{background:#dbeafe;border-left:3px solid var(--blue);padding:10px 14px;border-radius:6px;font-size:13px;color:#1e3a8a;margin-bottom:12px}
+  .alertbox{background:#fef3c7;border-left:3px solid var(--amber);padding:10px 14px;border-radius:6px;font-size:13px;color:#78350f;margin-bottom:12px}
+  .empty{padding:18px;text-align:center;color:var(--muted);font-size:13px;background:#f8fafc;border:1px dashed var(--line);border-radius:8px}
+  .printbtn{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;border:none;padding:10px 16px;border-radius:99px;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.18);font-family:inherit;z-index:99}
+  .printbtn:hover{background:#1e293b}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #16a34a;border-radius:14px;padding:24px;display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
+  .hero .crown{width:72px;height:72px;background:#16a34a;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;font-weight:700}
+  .hero h3{margin:0 0 4px;font-size:22px;color:#14532d}
+  .hero .role{font-size:13px;color:#166534;margin-bottom:10px;font-weight:500}
+  .hero ul{margin:6px 0 0 18px;padding:0;font-size:13px;color:#14532d}
+  .hero ul li{margin-bottom:5px;line-height:1.5}
+
+  /* Upload screen */
+  .upload-wrap{max-width:980px;margin:48px auto;padding:0 32px}
+  .upload-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:32px;box-shadow:0 4px 24px rgba(0,0,0,.04)}
+  .upload-card h2{margin:0 0 6px;font-size:22px;font-weight:600}
+  .upload-card .lede{color:var(--muted);font-size:14px;margin-bottom:24px}
+
+  .step{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+  .step-num{flex-shrink:0;width:28px;height:28px;background:var(--blue);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+  .step-body{flex:1;min-width:0}
+  .step-title{font-weight:600;margin-bottom:4px;font-size:14px}
+  .step-desc{color:var(--muted);font-size:13px;margin-bottom:8px}
+
+  .dropzone{display:block;width:100%;border:2px dashed var(--line);border-radius:10px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbfd;margin-top:8px}
+  .dropzone:hover, .dropzone.drag{border-color:var(--blue);background:var(--blue-bg)}
+  .dropzone .ico{font-size:32px;color:var(--blue);margin-bottom:8px}
+  .dropzone .main{font-weight:600;font-size:14px;color:var(--ink)}
+  .dropzone .sub{color:var(--muted);font-size:12px;margin-top:4px}
+  .dropzone input[type=file]{display:none}
+
+  .filelist{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .filerow{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;padding:10px 14px;background:#fafbfd;border:1px solid var(--line);border-radius:8px;align-items:center}
+  .filerow .icon{font-size:20px}
+  .filerow .name{font-weight:500;font-size:13px}
+  .filerow .meta{font-size:11px;color:var(--muted)}
+  .filerow .remove{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;padding:4px 8px}
+  .filerow .remove:hover{color:var(--red)}
+  .filerow.error{background:#fee2e2;border-color:#fecaca}
+
+  .ms-actions{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px}
+  .ms-actions button{background:#f1f5f9;border:1px solid var(--line);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:#475569;font-family:inherit}
+  .ms-actions button:hover{background:#e2e8f0}
+  .ms-actions .count{margin-left:auto;color:var(--muted)}
+  .ms-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fafbfd}
+  .ms-list label{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;background:#fff;border:1px solid var(--line)}
+  .ms-list label:hover{border-color:var(--blue);background:var(--blue-bg)}
+  .ms-list label.checked{background:#dcfce7;border-color:#16a34a}
+  .ms-list input[type=checkbox]{accent-color:var(--green);transform:scale(1.15)}
+  .ms-list .ms-name{font-weight:500;flex:1}
+  .ms-list .ms-meta{color:var(--muted);font-size:11px}
+  .ms-empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
+
+  .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  @media(max-width:700px){.config-grid{grid-template-columns:1fr}}
+  .config-grid label{display:flex;flex-direction:column;font-size:13px;color:var(--ink);font-weight:500;gap:4px}
+  .config-grid input, .config-grid select{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;outline:none;font-family:inherit}
+  .config-grid input:focus, .config-grid select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-bg)}
+
+  .actions{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+  .actions .left{font-size:12px;color:var(--muted)}
+  .btn-primary{background:var(--green);color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-primary:hover{background:#15803d}
+  .btn-primary:disabled{background:#94a3b8;cursor:not-allowed}
+  .btn-secondary{background:#f1f5f9;color:#475569;border:1px solid var(--line);padding:11px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;margin-right:8px}
+  .btn-secondary:hover{background:#e2e8f0}
+  .help-pill{display:inline-block;padding:2px 8px;background:#f1f5f9;color:#475569;border-radius:4px;font-size:11px;margin-left:6px;font-weight:500}
+
+  /* Health dot */
+  .health-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .health-dot.green{background:var(--green)}
+  .health-dot.amber{background:var(--amber)}
+  .health-dot.red{background:var(--red)}
+
+  /* Trend arrows */
+  .trend-up{color:var(--green);font-weight:600}
+  .trend-down{color:var(--red);font-weight:600}
+  .trend-flat{color:var(--muted);font-weight:600}
+
+  /* New top-level view tabs (Dashboard / Detailed Sprint) */
+  .view-tabs{position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 32px;z-index:50;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .view-tabs .tabs{display:inline-flex;gap:0;background:#f1f5f9;border:1px solid var(--line);border-radius:10px;padding:3px}
+  .view-tabs .tabs button{background:transparent;border:none;padding:8px 18px;font-size:13px;font-weight:500;color:var(--slate);cursor:pointer;border-radius:8px;font-family:inherit;transition:all .15s}
+  .view-tabs .tabs button:hover{color:var(--ink)}
+  .view-tabs .tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06);font-weight:600}
+  .view-tabs .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12px}
+  .view-tabs .right a{color:var(--slate);text-decoration:none;padding:6px 12px;border-radius:6px}
+  .view-tabs .right a:hover{background:#f1f5f9;color:var(--ink)}
+
+  /* Sprint picker (inside Detailed Sprint view, multi-sprint mode) */
+  .sprint-picker{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .sprint-picker .label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+  .sprint-picker .pills{display:flex;gap:6px;flex-wrap:wrap}
+  .sprint-picker .pills button{background:#f1f5f9;border:1px solid var(--line);padding:7px 14px;border-radius:99px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--slate);transition:all .15s;display:flex;align-items:center;gap:6px}
+  .sprint-picker .pills button:hover{background:#e2e8f0;color:var(--ink)}
+  .sprint-picker .pills button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .sprint-picker .pills button.active .health-dot{background:#fff !important;opacity:.9}
+  .sprint-picker .meta{margin-left:auto;font-size:12px;color:var(--muted)}
+
+  /* Hidden views */
+  .view-pane{display:none}
+  .view-pane.active{display:block}
+  .sprint-pane{display:none}
+  .sprint-pane.active{display:block}
+
+  @media print{
+    .nav, .printbtn, .filters, #upload-screen, .view-tabs, .sprint-picker{display:none !important}
+    section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
+    .tablewrap{max-height:none;overflow:visible}
+    .view-pane, .sprint-pane{display:block !important}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============= UPLOAD SCREEN ============= -->
+<div id="upload-screen">
+  <header>
+    <h1>Sprint Monitoring Report Generator</h1>
+    <div class="sub">Upload Zoho Projects Excel exports &mdash; tasks, bugs, or both. Pick one sprint for a detailed report or multiple sprints to also get a comparison dashboard.</div>
+    <div class="pillrow">
+      <span class="hp">Supported: Task export (.xlsx)</span>
+      <span class="hp">Supported: Bug / Issue export (.xlsx)</span>
+      <span class="hp">100% client-side &mdash; no data leaves your browser</span>
+    </div>
+  </header>
+
+  <div class="upload-wrap">
+    <div class="upload-card">
+      <h2>Generate a Sprint monitoring report</h2>
+      <div class="lede">Drop one or more Zoho exports below. The tool auto-detects whether each file is a task or bug export, then lets you pick one sprint for a detailed report &mdash; or multiple sprints to also get a cross-sprint comparison dashboard.</div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Upload Excel files</div>
+          <div class="step-desc">Add the task export and (optionally) the bug export from Zoho Projects. You can upload as many files as you want; duplicates and unrecognised files will be flagged.</div>
+          <label class="dropzone" id="dropzone" for="fileInput">
+            <div class="ico">&#8682;</div>
+            <div class="main">Click to browse or drag &amp; drop Excel files here</div>
+            <div class="sub">.xlsx files only &middot; multiple files supported</div>
+            <input type="file" id="fileInput" multiple accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          </label>
+          <div class="filelist" id="fileList"></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Pick the sprint(s) <span class="help-pill">Single = detailed report &middot; Multiple = comparison + per-sprint detail</span></div>
+          <div class="step-desc">After upload, the tool reads the &ldquo;Milestone Name&rdquo; column from your task file(s) and lists all sprints found.</div>
+          <div class="ms-actions">
+            <button type="button" id="msAll">Select all</button>
+            <button type="button" id="msNone">Clear</button>
+            <span class="count" id="msCount">0 selected</span>
+          </div>
+          <div class="ms-list" id="msList">
+            <div class="ms-empty">Upload a task file to populate sprints</div>
+          </div>
+          <div class="config-grid" style="margin-top:14px">
+            <label>
+              Project name (auto-detected, editable)
+              <input type="text" id="projectName" placeholder="Project name">
+            </label>
+            <label>
+              Output title (used as the report header)
+              <input type="text" id="reportTitle" placeholder="Sprint Monitoring Report">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Confirm reporting policy <span class="help-pill">Optional</span></div>
+          <div class="step-desc">By default, no names are anonymised. Add comma-separated names if Project Manager or Solution Architect roles should be redacted in the report.</div>
+          <div class="config-grid">
+            <label>
+              Anonymise as &ldquo;Project Manager&rdquo;
+              <input type="text" id="pmList" placeholder="e.g., Jane Doe (leave blank if none)">
+            </label>
+            <label>
+              Anonymise as &ldquo;Solution Architect&rdquo;
+              <input type="text" id="saList" placeholder="e.g., John Smith (leave blank if none)">
+            </label>
+          </div>
+          <div class="config-grid" style="margin-top:10px">
+            <label>
+              Treat &ldquo;CLOSED &ndash; MOVED&rdquo; tasks as
+              <select id="movedHandling">
+                <option value="rescope" selected>Re-scoped (excluded from in-scope KPIs &mdash; GREEN-friendly)</option>
+                <option value="deferred">Deferred (counted as carry-forward)</option>
+              </select>
+            </label>
+            <label>
+              Bug timing rule
+              <select id="bugTimingRule">
+                <option value="strict" selected>Only count bugs filed within sprint window</option>
+                <option value="all">Count all bugs in the export, regardless of date</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="left" id="readyState">Waiting for files&hellip;</div>
+        <div>
+          <button class="btn-secondary" id="resetBtn">Reset</button>
+          <button class="btn-primary" id="continueBtn" disabled>Continue &rarr; Generate report</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnote" style="text-align:center;margin-top:14px">
+      Runs entirely in your browser &middot; supports single-sprint detail or multi-sprint comparison
+    </div>
+  </div>
+</div>
+
+<!-- ============= REPORT SCREEN ============= -->
+<div id="report-screen" style="display:none">
+  <header id="reportHeader"></header>
+  <nav class="nav" id="reportNav" style="display:none"></nav>
+  <div id="viewTabs"></div>
+  <div class="container" id="reportBody"></div>
+  <button class="printbtn" onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  files: [],
+  milestones: [],            // [{name, taskCount}]
+  selectedMilestones: [],    // array of names
+  projectName: '',
+  reportTitle: '',
+  pmList: [],
+  saList: [],
+  movedHandling: 'rescope',
+  bugTimingRule: 'strict',
+};
+
+/* ============================================================
+   PARSE HELPERS
+   ============================================================ */
+function hmToHours(s){
+  if(s == null || s === '' || s === '-') return 0;
+  if(typeof s === 'number') return s;
+  const m = String(s).trim().match(/^(\d+):(\d+)$/);
+  if(m) return parseInt(m[1]) + parseInt(m[2])/60;
+  const f = parseFloat(s);
+  return isNaN(f) ? 0 : f;
+}
+function parseDate(s){
+  if(!s) return null;
+  if(s instanceof Date) return s;
+  if(typeof s === 'number' && s > 25569 && s < 80000) return new Date((s - 25569) * 86400 * 1000);
+  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})\s*(AM|PM)?)?/i);
+  if(m){
+    let h = m[4] ? parseInt(m[4]) : 0;
+    const ampm = (m[6]||'').toUpperCase();
+    if(ampm === 'PM' && h !== 12) h += 12;
+    if(ampm === 'AM' && h === 12) h = 0;
+    return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]), h, m[5] ? parseInt(m[5]) : 0);
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+function fmtDate(d){ return d ? d.toISOString().slice(0,16).replace('T',' ') : null; }
+function fmtDay(d){ return d ? d.toISOString().slice(0,10) : ''; }
+function fmtH(h){
+  if(!h && h !== 0) return '0:00';
+  const hh = Math.floor(h);
+  let mm = Math.round((h - hh) * 60);
+  return hh + ':' + String(mm).padStart(2,'0');
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function detectFileType(headers){
+  const set = new Set(headers.map(h => (h||'').toString().toLowerCase()));
+  const bugMarkers = ['issue prefix', 'issue name', 'reporter', 'severity'];
+  if(bugMarkers.every(m => set.has(m))) return 'bug';
+  const taskMarkers = ['task name', 'owner', 'custom status'];
+  if(taskMarkers.every(m => set.has(m))) return 'task';
+  return 'unknown';
+}
+function anonymiseOwner(o){
+  if(!o) return o;
+  let s = String(o);
+  state.pmList.forEach(name => { if(name) s = s.split(name).join('Project Manager'); });
+  state.saList.forEach(name => { if(name) s = s.split(name).join('Solution Architect'); });
+  return s;
+}
+function shortSprintName(s){
+  if(!s) return '';
+  // Try to extract short label
+  const m = String(s).match(/Sprint\s*\d+/i);
+  return m ? m[0] : String(s).slice(0, 18);
+}
+
+/* ============================================================
+   FILE INPUT
+   ============================================================ */
+const fileInput = document.getElementById('fileInput');
+const dropzone = document.getElementById('dropzone');
+const fileList = document.getElementById('fileList');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if(e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+async function handleFiles(fl){
+  for(const f of fl){
+    if(!f.name.toLowerCase().endsWith('.xlsx')){
+      state.files.push({file:f, name:f.name, type:'unknown', error:'Not an .xlsx file'});
+      continue;
+    }
+    try {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, { cellDates: true });
+      const sn = wb.SheetNames[0];
+      const ws = wb.Sheets[sn];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+      const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+      const type = detectFileType(headers);
+      state.files.push({file:f, name:f.name, sheet:sn, rows, type, headers});
+    } catch(err){
+      state.files.push({file:f, name:f.name, type:'unknown', error: err.message});
+    }
+  }
+  fileInput.value = '';
+  rebuildFileList();
+  rebuildSprintList();
+  updateReady();
+}
+
+function rebuildFileList(){
+  if(state.files.length === 0){ fileList.innerHTML = ''; return; }
+  fileList.innerHTML = state.files.map((f, i) => {
+    const icon = f.type === 'task' ? '&#128221;' : f.type === 'bug' ? '&#128027;' : '&#10067;';
+    const badge = f.type === 'task' ? '<span class="badge b-blue">Task export</span>'
+      : f.type === 'bug' ? '<span class="badge b-red">Bug export</span>'
+      : '<span class="badge b-grey">Unrecognised</span>';
+    const meta = f.error ? `<span style="color:var(--red)">${f.error}</span>` :
+      `${f.rows ? f.rows.length + ' rows' : ''} &middot; ${f.sheet || ''}`;
+    return `<div class="filerow ${f.error?'error':''}">
+      <span class="icon">${icon}</span>
+      <div><div class="name">${escapeHtml(f.name)}</div><div class="meta">${meta}</div></div>
+      <div>${badge}</div>
+      <button class="remove" data-i="${i}" title="Remove">&times;</button>
+    </div>`;
+  }).join('');
+  fileList.querySelectorAll('.remove').forEach(b => b.addEventListener('click', e => {
+    const i = parseInt(e.currentTarget.dataset.i);
+    state.files.splice(i, 1);
+    rebuildFileList();
+    rebuildSprintList();
+    updateReady();
+  }));
+}
+
+function rebuildSprintList(){
+  const taskFiles = state.files.filter(f => f.type === 'task' && f.rows);
+  const counts = {};
+  let projects = new Set();
+  taskFiles.forEach(f => f.rows.forEach(r => {
+    const ms = r['Milestone Name']; if(ms){ counts[ms] = (counts[ms]||0)+1; }
+    const pn = r['Project Name']; if(pn) projects.add(pn);
+  }));
+  state.milestones = Object.entries(counts).map(([name, count]) => ({name, count}))
+    .sort((a,b) => a.name.localeCompare(b.name));
+  // Preserve previous selections that still exist
+  state.selectedMilestones = state.selectedMilestones.filter(s => counts[s]);
+
+  const list = document.getElementById('msList');
+  if(state.milestones.length === 0){
+    list.innerHTML = '<div class="ms-empty">Upload a task file to populate sprints</div>';
+  } else {
+    list.innerHTML = state.milestones.map(m => {
+      const checked = state.selectedMilestones.includes(m.name);
+      return `<label class="${checked ? 'checked' : ''}" data-name="${escapeHtml(m.name)}">
+        <input type="checkbox" ${checked ? 'checked' : ''}>
+        <span class="ms-name">${escapeHtml(m.name)}</span>
+        <span class="ms-meta">${m.count} task(s)</span>
+      </label>`;
+    }).join('');
+    list.querySelectorAll('label').forEach(lbl => {
+      const cb = lbl.querySelector('input');
+      lbl.addEventListener('click', e => {
+        // toggle on label click except when clicking the checkbox itself (default behaviour)
+        if(e.target !== cb) cb.checked = !cb.checked;
+        const name = lbl.dataset.name;
+        if(cb.checked && !state.selectedMilestones.includes(name)) state.selectedMilestones.push(name);
+        if(!cb.checked) state.selectedMilestones = state.selectedMilestones.filter(s => s !== name);
+        lbl.classList.toggle('checked', cb.checked);
+        updateMsCount();
+        updateReady();
+      });
+    });
+  }
+  updateMsCount();
+  // project autofill
+  const pn = document.getElementById('projectName');
+  if(!pn.value && projects.size > 0) pn.value = [...projects][0];
+}
+
+function updateMsCount(){
+  const n = state.selectedMilestones.length;
+  document.getElementById('msCount').textContent = `${n} selected`;
+}
+
+document.getElementById('msAll').addEventListener('click', () => {
+  state.selectedMilestones = state.milestones.map(m => m.name);
+  rebuildSprintList(); updateReady();
+});
+document.getElementById('msNone').addEventListener('click', () => {
+  state.selectedMilestones = [];
+  rebuildSprintList(); updateReady();
+});
+
+document.getElementById('projectName').addEventListener('input', e => state.projectName = e.target.value);
+document.getElementById('reportTitle').addEventListener('input', e => state.reportTitle = e.target.value);
+document.getElementById('pmList').addEventListener('input', e => state.pmList = e.target.value.split(',').map(s=>s.trim()).filter(Boolean));
+document.getElementById('saList').addEventListener('input', e => state.saList = e.target.value.split(',').map(s=>s.trim()).filter(Boolean));
+document.getElementById('movedHandling').addEventListener('change', e => state.movedHandling = e.target.value);
+document.getElementById('bugTimingRule').addEventListener('change', e => state.bugTimingRule = e.target.value);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state.files = []; state.milestones = []; state.selectedMilestones = [];
+  document.getElementById('projectName').value = '';
+  document.getElementById('reportTitle').value = '';
+  rebuildFileList(); rebuildSprintList(); updateReady();
+});
+
+function updateReady(){
+  const taskFiles = state.files.filter(f => f.type === 'task');
+  const ready = taskFiles.length > 0 && state.selectedMilestones.length > 0;
+  document.getElementById('continueBtn').disabled = !ready;
+  const msg = document.getElementById('readyState');
+  const bugFiles = state.files.filter(f => f.type === 'bug').length;
+  if(state.files.length === 0) msg.textContent = 'Waiting for files...';
+  else if(taskFiles.length === 0) msg.textContent = 'Add at least one task export to continue';
+  else if(state.selectedMilestones.length === 0) msg.textContent = 'Select at least one sprint to continue';
+  else if(state.selectedMilestones.length === 1) msg.textContent = `Ready: 1 sprint selected → single detailed report. ${taskFiles.length} task file(s)${bugFiles ? ', ' + bugFiles + ' bug file(s)' : ''}.`;
+  else msg.textContent = `Ready: ${state.selectedMilestones.length} sprints selected → comparison dashboard + per-sprint detail. ${taskFiles.length} task file(s)${bugFiles ? ', ' + bugFiles + ' bug file(s)' : ''}.`;
+}
+
+document.getElementById('continueBtn').addEventListener('click', () => generateReport());
+
+/* ============================================================
+   BUILD PAYLOAD FOR ONE SPRINT
+   ============================================================ */
+function buildSprintPayload(sprintName, taskRows, bugRows){
+  const sprintTasksAll = taskRows.filter(r => r['Milestone Name'] === sprintName);
+  let sprintStart = null, sprintEnd = null;
+  for(const r of sprintTasksAll){
+    if(!sprintStart) sprintStart = parseDate(r['Milestone Start Date']);
+    if(!sprintEnd) sprintEnd = parseDate(r['Milestone End Date']);
+    if(sprintStart && sprintEnd) break;
+  }
+  if(!sprintEnd){
+    const dates = sprintTasksAll.map(r => parseDate(r['Completion Date'])).filter(Boolean);
+    if(dates.length) sprintEnd = new Date(Math.max(...dates.map(d => d.getTime())));
+  }
+  if(!sprintStart){
+    const dates = sprintTasksAll.map(r => parseDate(r['Created Time'])).filter(Boolean);
+    if(dates.length) sprintStart = new Date(Math.min(...dates.map(d => d.getTime())));
+  }
+
+  const tasks = sprintTasksAll.map(r => {
+    const name = r['Task Name'] || '';
+    const movedMatch = name.match(/^\[CLOSED - MOVED to (Sprint \d+)\]/i);
+    const planned = hmToHours(r['Work hours']);
+    const actual = hmToHours(r['Total Log Hours']);
+    const created = parseDate(r['Created Time']);
+    const completion = parseDate(r['Completion Date']);
+    return {
+      name,
+      tasklist: r['Task List Name'] || '',
+      owner: anonymiseOwner(r['Owner']) || 'Not Assigned',
+      ownerRaw: r['Owner'] || '',
+      status: r['Custom Status'] || '',
+      priority: r['Priority'] || '',
+      planned, actual,
+      variance: planned - actual,
+      created_iso: created ? fmtDate(created) : null,
+      completion_iso: completion ? fmtDate(completion) : null,
+      cycle_days: (created && completion) ? +((completion - created)/86400000).toFixed(1) : null,
+      moved_to: movedMatch ? movedMatch[1] : null,
+    };
+  });
+
+  const bugsAll = bugRows.map(r => {
+    const created = parseDate(r['Created Time']);
+    const inWindow = (sprintStart && sprintEnd && created) ? (created >= sprintStart && created <= sprintEnd) : false;
+    const lastClosed = parseDate(r['Last Closed Time']);
+    return {
+      id: r['Issue Prefix'] || '—',
+      title: r['Issue Name'] || '',
+      reporter: r['Reporter'] || '',
+      assignee: r['Assignee'] || '',
+      status: r['Status'] || '',
+      severity: r['Severity'] || '',
+      classification: r['Classification'] || '',
+      tags: r['Tags'] || '',
+      created_iso: created ? fmtDate(created) : null,
+      last_modified: r['Last Modified Time'] || null,
+      last_closed: lastClosed ? fmtDate(lastClosed) : null,
+      in_sprint_window: inWindow,
+      days_after_close: (sprintEnd && created && !inWindow && created > sprintEnd) ? +((created - sprintEnd)/86400000).toFixed(1) : 0,
+    };
+  });
+  const bugs = state.bugTimingRule === 'strict' ? bugsAll.filter(b => b.in_sprint_window) : bugsAll;
+  const bugsOutside = state.bugTimingRule === 'strict' ? bugsAll.filter(b => !b.in_sprint_window) : [];
+
+  const movedTasks = tasks.filter(t => t.moved_to);
+  const inScope = state.movedHandling === 'rescope' ? tasks.filter(t => !t.moved_to) : tasks;
+  const totalPlanned = inScope.reduce((a,t)=>a+t.planned, 0);
+  const totalActual = inScope.reduce((a,t)=>a+t.actual, 0);
+  const movedPlanned = movedTasks.reduce((a,t)=>a+t.planned, 0);
+  const movedActual = movedTasks.reduce((a,t)=>a+t.actual, 0);
+  const doneN = inScope.filter(t => t.status === 'Done').length;
+  const closedN = inScope.filter(t => t.status === 'Closed').length;
+  const inProgressN = inScope.filter(t => /in progress|on hold|open/i.test(t.status)).length;
+  const totalTasks = inScope.length;
+  const delivered = doneN + closedN;
+  const taskPct = totalTasks > 0 ? (delivered/totalTasks)*100 : 0;
+  const hourPct = totalPlanned > 0 ? (totalActual/totalPlanned)*100 : 0;
+
+  // Health
+  let health = 'GREEN';
+  if(state.movedHandling === 'rescope'){
+    if(taskPct < 100 || inProgressN > 0) health = 'AMBER';
+    if(taskPct < 80) health = 'RED';
+  } else {
+    if(taskPct >= 95) health = 'GREEN';
+    else if(taskPct >= 80) health = 'AMBER';
+    else health = 'RED';
+  }
+
+  // Owners
+  const allOwnerSet = new Set();
+  inScope.forEach(t => String(t.owner).split(',').forEach(o => {
+    const trimmed = o.trim();
+    if(trimmed && trimmed !== 'Project Manager' && trimmed !== 'Solution Architect') allOwnerSet.add(trimmed);
+  }));
+  const tracked = [...allOwnerSet].sort();
+
+  const resStats = {};
+  tracked.forEach(o => resStats[o] = {tasks:0, done:0, planned:0, actual:0, bugA:0, bugR:0, bugP:0, bugRep:0});
+  inScope.forEach(t => {
+    const owners = String(t.owner).split(',').map(s=>s.trim()).filter(Boolean);
+    const n = owners.length || 1;
+    owners.forEach(o => {
+      if(!resStats[o]) return;
+      resStats[o].tasks += 1;
+      resStats[o].planned += t.planned/n;
+      resStats[o].actual += t.actual/n;
+      if(t.status === 'Done' || t.status === 'Closed') resStats[o].done += 1;
+    });
+  });
+  bugs.forEach(b => {
+    if(resStats[b.assignee]){
+      resStats[b.assignee].bugA += 1;
+      if(['Closed','Resolved'].includes(b.status)) resStats[b.assignee].bugR += 1;
+      else resStats[b.assignee].bugP += 1;
+    }
+    if(resStats[b.reporter]) resStats[b.reporter].bugRep += 1;
+  });
+
+  const tlStats = {};
+  inScope.forEach(t => {
+    if(!tlStats[t.tasklist]) tlStats[t.tasklist] = {n:0, p:0, a:0};
+    tlStats[t.tasklist].n += 1;
+    tlStats[t.tasklist].p += t.planned;
+    tlStats[t.tasklist].a += t.actual;
+  });
+
+  const statusCounts = {};
+  inScope.forEach(t => statusCounts[t.status] = (statusCounts[t.status]||0)+1);
+
+  const heroOwner = tracked.slice().sort((a,b) => resStats[b].actual - resStats[a].actual)[0] || null;
+
+  const bugTotal = bugs.length;
+  const bugOpen = bugs.filter(b => b.status === 'Open').length;
+  const bugClosed = bugs.filter(b => ['Closed','Resolved'].includes(b.status)).length;
+  const bugInProg = bugs.filter(b => /in progress/i.test(b.status)).length;
+  const bugHigh = bugs.filter(b => /critical|major|high/i.test(b.severity)).length;
+  const bugSeverityCounts = {};
+  bugs.forEach(b => bugSeverityCounts[b.severity||'Unknown'] = (bugSeverityCounts[b.severity||'Unknown']||0)+1);
+  const bugAssigneeCounts = {};
+  bugs.forEach(b => bugAssigneeCounts[b.assignee||'Unassigned'] = (bugAssigneeCounts[b.assignee||'Unassigned']||0)+1);
+  const bugClosurePct = bugTotal > 0 ? (bugClosed/bugTotal)*100 : null;
+
+  return {
+    sprintName,
+    short: shortSprintName(sprintName),
+    sprintStart, sprintEnd,
+    sprintStartLabel: sprintStart ? sprintStart.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : 'Not Available in Excel',
+    sprintEndLabel: sprintEnd ? sprintEnd.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : 'Not Available in Excel',
+    health,
+    tasks: inScope, allTasks: tasks, movedTasks,
+    bugs, bugsOutside,
+    totals: {
+      total_tasks: totalTasks, total_planned: totalPlanned, total_actual: totalActual,
+      done: doneN, closed: closedN, in_progress: inProgressN,
+      moved_count: movedTasks.length, moved_planned: movedPlanned, moved_actual: movedActual,
+      delivered, task_pct: taskPct, hour_pct: hourPct,
+      bug_total: bugTotal, bug_open: bugOpen, bug_closed: bugClosed,
+      bug_inprog: bugInProg, bug_high: bugHigh, bug_closure_pct: bugClosurePct,
+      bugs_outside_count: bugsOutside.length,
+    },
+    resources: resStats, tracked, tlStats, statusCounts, bugSeverityCounts, bugAssigneeCounts, heroOwner,
+  };
+}
+
+/* ============================================================
+   GENERATE
+   ============================================================ */
+function generateReport(){
+  const taskRows = [];
+  state.files.filter(f => f.type === 'task').forEach(f => f.rows.forEach(r => taskRows.push(r)));
+  const bugRows = [];
+  state.files.filter(f => f.type === 'bug').forEach(f => f.rows.forEach(r => bugRows.push(r)));
+
+  const payloads = state.selectedMilestones
+    .slice()
+    .sort()
+    .map(name => buildSprintPayload(name, taskRows, bugRows));
+
+  if(payloads.length === 0){ alert('No sprints selected.'); return; }
+
+  document.getElementById('upload-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = 'block';
+  if(payloads.length === 1) renderSingle(payloads[0]);
+  else renderMulti(payloads);
+  window.scrollTo(0, 0);
+}
+
+function newReportLink(){
+  return `<a href="#" id="backLink" style="margin-left:auto">&larr; New report</a>`;
+}
+function attachBackLink(){
+  const a = document.getElementById('backLink');
+  if(a) a.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('upload-screen').style.display = 'block';
+    document.getElementById('report-screen').style.display = 'none';
+    document.getElementById('reportBody').innerHTML = '';
+    window.scrollTo(0, 0);
+  });
+}
+
+/* ============================================================
+   RENDER SINGLE-SPRINT REPORT
+   ============================================================ */
+function renderSingle(D){
+  const M = {
+    project: state.projectName || 'Project',
+    title: state.reportTitle || (D.sprintName + ' Monitoring Report'),
+    reportDate: new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}),
+  };
+  const TOT = D.totals;
+  const healthClass = D.health === 'GREEN' ? 'green' : (D.health === 'AMBER' ? 'amber' : 'red');
+
+  document.getElementById('reportHeader').innerHTML = `
+    <h1>${escapeHtml(M.title)}</h1>
+    <div class="sub">${escapeHtml(M.project)} &middot; ${escapeHtml(D.sprintName)} &middot; generated ${escapeHtml(M.reportDate)}</div>
+    <div class="pillrow">
+      <span class="hp">Project: ${escapeHtml(M.project)}</span>
+      <span class="hp">Sprint: ${escapeHtml(D.sprintName)}</span>
+      <span class="hp">Window: ${escapeHtml(D.sprintStartLabel)} &rarr; ${escapeHtml(D.sprintEndLabel)}</span>
+      <span class="hp">Health: ${D.health}</span>
+    </div>`;
+
+  // Single-sprint mode: show only one tab — "Detailed Sprint"
+  document.getElementById('viewTabs').innerHTML = `
+    <div class="view-tabs">
+      <div class="tabs">
+        <button class="active" type="button">Detailed Sprint</button>
+      </div>
+      <div class="right">
+        <span class="mute">${escapeHtml(D.sprintName)}</span>
+        ${newReportLink()}
+      </div>
+    </div>`;
+
+  const body = document.getElementById('reportBody');
+  body.innerHTML = renderSprintSections(D, '', true);
+  populateSprintSections(D, '');
+  attachBackLink();
+}
+
+/* Single sprint sections HTML — id prefixes optional for multi mode */
+function renderSprintSections(D, idPrefix, includeAnchors){
+  const TOT = D.totals;
+  const healthClass = D.health === 'GREEN' ? 'green' : (D.health === 'AMBER' ? 'amber' : 'red');
+  const px = idPrefix;
+  const a = (id) => includeAnchors ? `id="${id}"` : `id="${px}${id}"`;
+  const cId = (id) => `${px}${id}`;
+
+  return `
+    <section ${a('exec')}>
+      <h2>1. Executive Summary</h2>
+      <div class="lede">A management-level read of sprint health.</div>
+      ${TOT.moved_count > 0 ? `<div class="greenbox"><strong>Scope adjustment:</strong> ${TOT.moved_count} task(s) re-scoped to a future sprint per the Closed-Moved convention. Excluded from in-scope KPIs and listed under Section 9.</div>` : ''}
+      ${TOT.bugs_outside_count > 0 ? `<div class="alertbox"><strong>Bug timing note:</strong> ${TOT.bugs_outside_count} bug(s) fall outside this sprint's window and are excluded from this section.</div>` : ''}
+      <div class="kpis">
+        <div class="kpi ${healthClass}"><div class="l">Sprint Health</div><div class="v">${D.health}</div></div>
+        <div class="kpi ${TOT.task_pct >= 100 ? 'green' : TOT.task_pct >= 80 ? 'amber' : 'red'}"><div class="l">Task Completion</div><div class="v">${TOT.task_pct.toFixed(1)}%</div><div class="d">${TOT.delivered} of ${TOT.total_tasks} delivered</div></div>
+        <div class="kpi ${TOT.hour_pct >= 80 ? 'green' : TOT.hour_pct >= 50 ? 'amber' : 'red'}"><div class="l">Effort Utilization</div><div class="v">${TOT.hour_pct.toFixed(1)}%</div></div>
+        <div class="kpi"><div class="l">Planned Hours</div><div class="v num">${TOT.total_planned.toFixed(1)}</div></div>
+        <div class="kpi"><div class="l">Logged Hours</div><div class="v num">${TOT.total_actual.toFixed(2)}</div></div>
+        <div class="kpi"><div class="l">Re-scoped Tasks</div><div class="v num">${TOT.moved_count}</div></div>
+        ${TOT.bug_total > 0 ? `<div class="kpi ${TOT.bug_open > 0 ? 'red' : 'green'}"><div class="l">Open Bugs</div><div class="v num">${TOT.bug_open}</div><div class="d">${TOT.bug_total} total / ${TOT.bug_closed} closed</div></div>` : `<div class="kpi green"><div class="l">Bugs in Sprint</div><div class="v num">0</div></div>`}
+      </div>
+      <div class="narrative" style="margin-top:18px">
+        <p><strong>Verdict:</strong> Sprint closed <strong>${D.health}</strong>. ${TOT.task_pct >= 100 ? 'All in-scope tasks delivered within the sprint window.' : TOT.delivered + ' of ' + TOT.total_tasks + ' in-scope tasks delivered.'} ${TOT.moved_count > 0 ? TOT.moved_count + ' task(s) re-scoped as planned scope adjustment.' : ''}</p>
+        <p><strong>Effort:</strong> Logged ${TOT.total_actual.toFixed(2)} hrs against ${TOT.total_planned.toFixed(2)} planned (${TOT.hour_pct.toFixed(1)}% utilization). ${TOT.bug_total === 0 ? 'No bugs filed within sprint window.' : `${TOT.bug_total} bug(s) raised, ${TOT.bug_closed} closed.`}</p>
+      </div>
+    </section>
+
+    <section ${a('dashboard')}>
+      <h2>2. Sprint Dashboard Summary</h2>
+      <div class="lede">Visual snapshot of plan vs delivery, status mix, and module split.</div>
+      <div class="grid-2">
+        <div><div style="font-weight:500;margin-bottom:6px">Task status distribution</div><div class="chartwrap"><canvas id="${cId('cStatus')}"></canvas></div></div>
+        <div><div style="font-weight:500;margin-bottom:6px">Effort by task list</div><div class="chartwrap"><canvas id="${cId('cTaskList')}"></canvas></div></div>
+      </div>
+      <div class="grid-2" style="margin-top:18px">
+        <div><div style="font-weight:500;margin-bottom:6px">Planned vs Actual hours by resource</div><div class="chartwrap tall"><canvas id="${cId('cResHrs')}"></canvas></div></div>
+        <div><div style="font-weight:500;margin-bottom:6px">Task completion by resource</div><div class="chartwrap tall"><canvas id="${cId('cResTasks')}"></canvas></div></div>
+      </div>
+      ${TOT.bug_total > 0 ? `
+      <div class="grid-2" style="margin-top:18px">
+        <div><div style="font-weight:500;margin-bottom:6px">Bug severity distribution</div><div class="chartwrap"><canvas id="${cId('cBugSev')}"></canvas></div></div>
+        <div><div style="font-weight:500;margin-bottom:6px">Bug assignee load</div><div class="chartwrap"><canvas id="${cId('cBugAss')}"></canvas></div></div>
+      </div>` : ''}
+      <h3 style="margin:22px 0 8px;font-size:14px;font-weight:600">Sprint metadata</h3>
+      <div class="tablewrap"><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody id="${cId('tbDash')}"></tbody></table></div>
+    </section>
+
+    <section ${a('hours')}>
+      <h2>3. Planned vs Actual Hours Analysis</h2>
+      <div class="lede">Sprint-level effort reconciliation for in-scope tasks.</div>
+      <div class="tablewrap" style="margin-bottom:18px">
+        <table><thead><tr><th>Metric</th><th>Value / Remarks</th></tr></thead><tbody id="${cId('tbPvA')}"></tbody></table>
+      </div>
+      <h3 style="margin:6px 0 8px;font-size:14px;font-weight:600">Effort by Workstream</h3>
+      <div class="tablewrap">
+        <table><thead><tr><th>Workstream / Task list</th><th>Tasks</th><th>Planned</th><th>Actual</th><th>Util %</th><th></th></tr></thead><tbody id="${cId('tbTL')}"></tbody></table>
+      </div>
+    </section>
+
+    <section ${a('tasks')}>
+      <h2>4. Task-Level Detailed Table</h2>
+      <div class="lede">Showing ${TOT.total_tasks} in-scope task(s).${TOT.moved_count ? ` Re-scoped items (${TOT.moved_count}) listed under Section 9.` : ''}</div>
+      <div class="filters">
+        <input id="${cId('fSearch')}" type="search" placeholder="Search task name or task list..." />
+        <select id="${cId('fStatus')}"><option value="">All statuses</option></select>
+        <select id="${cId('fOwner')}"><option value="">All owners</option></select>
+        <select id="${cId('fTL')}"><option value="">All task lists</option></select>
+        <select id="${cId('fPriority')}"><option value="">All priorities</option></select>
+        <button class="clear" id="${cId('fClear')}">Clear filters</button>
+        <span class="mute num" id="${cId('fCount')}" style="margin-left:auto"></span>
+      </div>
+      <div class="tablewrap"><table id="${cId('tT')}">
+        <thead><tr>
+          <th data-k="name">Task</th><th data-k="tasklist">Task list</th><th data-k="owner">Owner</th>
+          <th data-k="status">Status</th><th data-k="priority">Priority</th>
+          <th data-k="planned">Planned</th><th data-k="actual">Actual</th>
+          <th data-k="variance">Variance</th><th data-k="completion_iso">Completed on</th><th data-k="cycle_days">Cycle (d)</th>
+        </tr></thead>
+        <tbody id="${cId('tBody')}"></tbody>
+      </table></div>
+    </section>
+
+    <section ${a('bugs')}>
+      <h2>5. Bug-Level Analysis</h2>
+      <div class="lede">${TOT.bug_total > 0 ? 'Bugs filed within the sprint window.' : 'Sprint closed defect-clean.'}</div>
+      ${TOT.bug_total === 0 ? `
+        <div class="greenbox"><strong>In-scope bug summary:</strong> Zero bugs were filed within the sprint window.</div>
+        ${TOT.bugs_outside_count > 0 ? `<div class="infobox" style="margin-top:14px"><strong>Note:</strong> ${TOT.bugs_outside_count} bug(s) raised outside the sprint window are tracked under their own sprint.</div>` : ''}
+      ` : `
+        <div class="kpis">
+          <div class="kpi"><div class="l">Total bugs</div><div class="v num">${TOT.bug_total}</div></div>
+          <div class="kpi green"><div class="l">Closed</div><div class="v num">${TOT.bug_closed}</div></div>
+          <div class="kpi red"><div class="l">Open</div><div class="v num">${TOT.bug_open}</div></div>
+          <div class="kpi"><div class="l">In progress</div><div class="v num">${TOT.bug_inprog}</div></div>
+          <div class="kpi amber"><div class="l">High-priority</div><div class="v num">${TOT.bug_high}</div></div>
+          <div class="kpi"><div class="l">Closure efficiency</div><div class="v">${((TOT.bug_closed/TOT.bug_total)*100).toFixed(1)}%</div></div>
+        </div>
+        <div class="filters" style="margin-top:16px">
+          <input id="${cId('bSearch')}" type="search" placeholder="Search bug title, tag, assignee..." />
+          <select id="${cId('bStatus')}"><option value="">All statuses</option></select>
+          <select id="${cId('bSeverity')}"><option value="">All severities</option></select>
+          <select id="${cId('bAssignee')}"><option value="">All assignees</option></select>
+          <button class="clear" id="${cId('bClear')}">Clear filters</button>
+          <span class="mute num" id="${cId('bCount')}" style="margin-left:auto"></span>
+        </div>
+        <div class="tablewrap"><table id="${cId('tBugs')}">
+          <thead><tr>
+            <th data-k="id">Bug ID</th><th data-k="title">Title</th><th data-k="reporter">Reporter</th>
+            <th data-k="assignee">Assignee</th><th data-k="severity">Severity</th>
+            <th data-k="status">Status</th><th data-k="created_iso">Created</th><th data-k="classification">Classification</th>
+          </tr></thead>
+          <tbody id="${cId('bBody')}"></tbody>
+        </table></div>
+      `}
+    </section>
+
+    <section ${a('resources')}>
+      <h2>6. Resource-Wise Performance Table</h2>
+      <div class="lede">Performance for delivery resources, on in-scope tasks. PM/SA roles excluded as per reporting policy.</div>
+      <div class="tablewrap" style="margin-bottom:14px">
+        <table><thead><tr>
+          <th>Resource</th><th>Tasks</th><th>Done/Closed</th>
+          <th>Planned</th><th>Actual</th><th>Util %</th><th>Eff %</th>
+          ${TOT.bug_total > 0 ? '<th>Bugs (A/R/P)</th><th>Bugs Reported</th>' : ''}
+        </tr></thead><tbody id="${cId('tbRes')}"></tbody></table>
+      </div>
+      <div class="footnote">Util % = resource actual &divide; sprint actual hours. Eff % = resource actual &divide; resource planned hours.</div>
+    </section>
+
+    <section ${a('hero')}>
+      <h2>7. Hero Resource Highlight</h2>
+      <div class="lede">Hero selected from delivery roster, based on highest logged effort against in-scope tasks.</div>
+      <div id="${cId('heroBlock')}"></div>
+    </section>
+
+    <section ${a('risks')}>
+      <h2>8. Risks, Blockers &amp; Dependencies</h2>
+      <div class="tablewrap"><table><thead><tr><th>Category</th><th>Detail</th></tr></thead><tbody id="${cId('tbRisk')}"></tbody></table></div>
+    </section>
+
+    <section ${a('next')}>
+      <h2>9. Next Sprint Recommendations</h2>
+      ${D.movedTasks.length > 0 ? `
+      <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Re-scoped tasks now committed to next sprint(s)</h3>
+      <div class="tablewrap" style="margin-bottom:18px">
+        <table><thead><tr><th>#</th><th>Task</th><th>Owner</th><th>Planned</th><th>Logged</th><th>Target sprint</th></tr></thead>
+          <tbody id="${cId('tbCarry')}"></tbody></table>
+      </div>` : ''}
+      <div class="twocol">
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Suggested monitoring improvements</h3>
+          <ul class="list-clean">
+            <li>Daily check on tasks with planned &gt; 8 hrs and logged &lt; 25% mid-sprint.</li>
+            <li>Populate Start Date and Due Date at task creation.</li>
+            <li>Standardise &ldquo;CLOSED &ndash; MOVED&rdquo; into a dedicated &ldquo;Re-scoped&rdquo; status.</li>
+            <li>Surface a weekly burn-down extracted from the same Zoho export.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Worklog &amp; planning improvements</h3>
+          <ul class="list-clean">
+            <li>Mandate end-of-day timesheet entry for each tracked resource.</li>
+            <li>Run estimation review for tasks with &gt;50% variance.</li>
+            <li>Cap any single task at 24 planned hours; split larger items into milestones.</li>
+            <li>Plan recurring activities (DSM, client calls, code reviews) with realistic hour estimates.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+/* Populate dynamic content for a sprint payload, optionally with id prefix */
+function populateSprintSections(D, idPrefix){
+  const TOT = D.totals;
+  const px = idPrefix;
+  const $ = id => document.getElementById(px + id);
+  const healthClass = D.health === 'GREEN' ? 'green' : (D.health === 'AMBER' ? 'amber' : 'red');
+
+  // Dashboard meta
+  const dashRows = [
+    ['Project Name', escapeHtml(state.projectName || 'Project')],
+    ['Sprint / Milestone', escapeHtml(D.sprintName)],
+    ['Sprint Window', `${escapeHtml(D.sprintStartLabel)} &rarr; ${escapeHtml(D.sprintEndLabel)}`],
+    ['Sprint Health', `<span class="badge b-${healthClass}">${D.health}</span>`],
+    ['Total Tasks (in scope)', String(TOT.total_tasks)],
+    ['Tasks Done', String(TOT.done)],
+    ['Tasks Closed (delivered)', String(TOT.closed)],
+    ['Tasks In Progress / Pending', String(TOT.in_progress)],
+    ['Tasks Re-scoped to Future Sprints', String(TOT.moved_count)],
+    ['Total Bugs (in sprint window)', String(TOT.bug_total)],
+    ['Bugs Open', String(TOT.bug_open)],
+    ['Bugs Closed', String(TOT.bug_closed)],
+    ['Bugs In Progress', String(TOT.bug_inprog)],
+  ];
+  $('tbDash').innerHTML = dashRows.map(r => `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td></tr>`).join('');
+
+  // Planned vs Actual
+  const remaining = (TOT.total_planned - TOT.total_actual).toFixed(2);
+  const pvaRows = [
+    ['Total Planned Hours (in scope)', `${TOT.total_planned.toFixed(2)} hrs`],
+    ['Total Actual Logged Hours', `${TOT.total_actual.toFixed(2)} hrs`],
+    ['Remaining Hours', `${remaining} hrs`],
+    ['Variance (Planned &minus; Actual)', `${remaining >= 0 ? '+' : ''}${remaining} hrs`],
+    ['Completion % (task-status based)', `${TOT.task_pct.toFixed(1)}% (${TOT.delivered} of ${TOT.total_tasks})`],
+    ['Completion % (logged-hour based)', `${TOT.hour_pct.toFixed(1)}%`],
+  ];
+  if(TOT.moved_count > 0){
+    pvaRows.push(['Re-scoped tasks excluded', `${TOT.moved_count} task(s) &middot; ${TOT.moved_planned.toFixed(0)} planned hrs &middot; ${TOT.moved_actual.toFixed(2)} logged hrs`]);
+  }
+  $('tbPvA').innerHTML = pvaRows.map(r => `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td></tr>`).join('');
+
+  const tlEntries = Object.entries(D.tlStats).sort((a,b) => b[1].p - a[1].p);
+  $('tbTL').innerHTML = tlEntries.map(([k,v]) => {
+    const util = v.p > 0 ? (v.a/v.p)*100 : 0;
+    const cls = util > 80 ? 'green' : (util > 50 ? 'amber' : 'red');
+    return `<tr>
+      <td>${escapeHtml(k)}</td>
+      <td class="num">${v.n}</td><td class="num">${v.p.toFixed(1)}</td><td class="num">${v.a.toFixed(2)}</td>
+      <td class="num">${util.toFixed(1)}%</td>
+      <td style="width:120px"><div class="progress ${cls}"><span style="width:${Math.min(util,100)}%"></span></div></td>
+    </tr>`;
+  }).join('');
+
+  $('tbRes').innerHTML = D.tracked.map(o => {
+    const s = D.resources[o];
+    const eff = s.planned > 0 ? (s.actual/s.planned)*100 : 0;
+    const util = TOT.total_actual > 0 ? (s.actual/TOT.total_actual)*100 : 0;
+    const utilCls = util > 30 ? 'green' : (util > 10 ? 'amber' : 'red');
+    return `<tr>
+      <td><strong>${escapeHtml(o)}</strong></td>
+      <td class="num">${s.tasks}</td><td class="num">${s.done}</td>
+      <td class="num">${s.planned.toFixed(1)}</td><td class="num">${s.actual.toFixed(2)}</td>
+      <td><span class="badge b-${utilCls}">${util.toFixed(1)}%</span></td>
+      <td class="num">${eff.toFixed(1)}%</td>
+      ${TOT.bug_total > 0 ? `<td class="num">${s.bugA} / ${s.bugR} / ${s.bugP}</td><td class="num">${s.bugRep}</td>` : ''}
+    </tr>`;
+  }).join('');
+
+  // Hero
+  if(D.heroOwner){
+    const s = D.resources[D.heroOwner];
+    $('heroBlock').innerHTML = `
+      <div class="hero">
+        <div class="crown">&#9733;</div>
+        <div>
+          <h3>${escapeHtml(D.heroOwner)}</h3>
+          <div class="role">Highest logged contribution &mdash; Sprint Hero</div>
+          <ul>
+            <li><strong>Tasks owned:</strong> ${s.tasks} task(s) in scope, ${s.done} delivered.</li>
+            <li><strong>Effort:</strong> Logged ${s.actual.toFixed(2)} hrs against ${s.planned.toFixed(2)} planned.</li>
+            <li><strong>Share of sprint:</strong> ${TOT.total_actual > 0 ? ((s.actual/TOT.total_actual)*100).toFixed(1) : '0'}% of total logged hours.</li>
+            ${TOT.bug_total > 0 ? `<li><strong>Bug profile:</strong> ${s.bugA} assigned, ${s.bugR} resolved, ${s.bugP} pending.</li>` : ''}
+          </ul>
+        </div>
+      </div>
+      <div class="footnote" style="margin-top:14px">PM, SA, and any non-trackable members are excluded from Hero consideration.</div>`;
+  } else $('heroBlock').innerHTML = `<div class="empty">No tracked resources to evaluate.</div>`;
+
+  // Risks
+  const riskRows = [
+    ['Open Blockers', TOT.in_progress > 0 ? `${TOT.in_progress} task(s) still in progress at sprint close.` : 'No live blockers; all in-scope tasks closed.'],
+    ['Delayed Tasks', TOT.delivered === TOT.total_tasks ? 'No delayed tasks in scope.' : `${TOT.total_tasks - TOT.delivered} task(s) not delivered.`],
+    ['Open Bugs', TOT.bug_open > 0 ? `${TOT.bug_open} open bug(s) in sprint window.` : 'No open bugs raised within the sprint window.'],
+    ['Re-scoped to next sprint', TOT.moved_count > 0 ? `${TOT.moved_count} task(s) re-scoped (${TOT.moved_planned.toFixed(0)} planned hrs).` : 'None.'],
+    ['Effort Underrun / Overrun', `Sprint logged ${TOT.hour_pct.toFixed(1)}% of planned hours; review estimation accuracy if &lt;75% or &gt;110%.`],
+    ['Dependency-Related Risks', 'Confirm Predecessors/Successors are populated in Zoho for cross-sprint feature dependencies.'],
+  ];
+  $('tbRisk').innerHTML = riskRows.map(r => `<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td></tr>`).join('');
+
+  if(D.movedTasks.length > 0 && $('tbCarry')){
+    $('tbCarry').innerHTML = D.movedTasks.map((t, i) => {
+      const cleanName = (t.name || '').replace(/^\[CLOSED - MOVED to Sprint \d+\]\s*/i, '');
+      return `<tr>
+        <td class="num">${i+1}</td><td>${escapeHtml(cleanName)}</td><td>${escapeHtml(t.owner)}</td>
+        <td class="num">${t.planned.toFixed(1)}</td><td class="num">${t.actual.toFixed(2)}</td>
+        <td><span class="badge b-blue">${escapeHtml(t.moved_to)}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Filters / sort
+  setupTaskFilters(D, px);
+  if(TOT.bug_total > 0) setupBugFilters(D, px);
+
+  // Charts — drawn eagerly only when the pane is actually visible.
+  // Hidden panes (display:none) would render charts at 0x0; defer to first activation.
+  if(arguments[2] !== false) drawSprintCharts(D, px);
+}
+
+/* ============================================================
+   FILTERS / SORT / CHARTS  — accept idPrefix
+   ============================================================ */
+function setupTaskFilters(D, px){
+  const T = D.tasks;
+  function uniques(arr){return [...new Set(arr.filter(Boolean))].sort();}
+  function fillSel(id, arr){
+    const sel = document.getElementById(px + id); if(!sel) return;
+    arr.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+  }
+  fillSel('fStatus', uniques(T.map(t => t.status)));
+  fillSel('fOwner', uniques(T.flatMap(t => String(t.owner).split(',').map(s => s.trim()))));
+  fillSel('fTL', uniques(T.map(t => t.tasklist)));
+  fillSel('fPriority', uniques(T.map(t => t.priority).filter(p => p && p !== 'None')));
+
+  let sortKey = null, sortDir = 1;
+  function statusBadge(s){
+    const map = {Done:'b-green',Closed:'b-amber',Open:'b-blue','In progress':'b-purple','On Hold':'b-red','Dev Done':'b-teal','PR Done':'b-teal'};
+    return `<span class="badge ${map[s]||'b-grey'}">${escapeHtml(s||'')}</span>`;
+  }
+  function priorityBadge(p){
+    if(!p || p === 'None') return `<span class="mute">&mdash;</span>`;
+    const map = {High:'b-red',Medium:'b-amber',Low:'b-blue'};
+    return `<span class="badge ${map[p]||'b-grey'}">${escapeHtml(p)}</span>`;
+  }
+  function $g(id){ return document.getElementById(px + id); }
+  function apply(){
+    const q = $g('fSearch').value.toLowerCase();
+    const fs = $g('fStatus').value, fo = $g('fOwner').value, ft = $g('fTL').value, fp = $g('fPriority').value;
+    let rows = T.filter(t => {
+      if(q && !((t.name||'').toLowerCase().includes(q) || (t.tasklist||'').toLowerCase().includes(q) || (t.owner||'').toLowerCase().includes(q))) return false;
+      if(fs && t.status !== fs) return false;
+      if(fo && !(t.owner||'').split(',').map(s=>s.trim()).includes(fo)) return false;
+      if(ft && t.tasklist !== ft) return false;
+      if(fp && t.priority !== fp) return false;
+      return true;
+    });
+    if(sortKey){
+      rows = rows.slice().sort((a,b) => {
+        let av, bv;
+        if(sortKey === 'variance'){ av = a.planned - a.actual; bv = b.planned - b.actual; }
+        else { av = a[sortKey]; bv = b[sortKey]; }
+        if(av==null) av=''; if(bv==null) bv='';
+        if(typeof av === 'number' && typeof bv === 'number') return (av-bv)*sortDir;
+        return String(av).localeCompare(String(bv))*sortDir;
+      });
+    }
+    $g('tBody').innerHTML = rows.map(t => {
+      const v = t.planned - t.actual; const vCls = v >= 0 ? 'b-green' : 'b-red';
+      const cycle = t.cycle_days != null ? t.cycle_days.toFixed(1) : '&mdash;';
+      const completed = t.completion_iso ? escapeHtml(t.completion_iso) : `<span class="mute">N/A</span>`;
+      return `<tr>
+        <td>${escapeHtml(t.name||'')}</td>
+        <td><span class="mute" style="font-size:12px">${escapeHtml(t.tasklist||'')}</span></td>
+        <td>${escapeHtml(t.owner||'')}</td>
+        <td>${statusBadge(t.status)}</td><td>${priorityBadge(t.priority)}</td>
+        <td class="num">${t.planned.toFixed(1)}</td><td class="num">${t.actual.toFixed(2)}</td>
+        <td class="num"><span class="badge ${vCls}">${v.toFixed(1)}</span></td>
+        <td class="mute">${completed}</td><td class="num">${cycle}</td>
+      </tr>`;
+    }).join('');
+    $g('fCount').textContent = rows.length + ' of ' + T.length + ' in-scope tasks';
+  }
+  ['fSearch','fStatus','fOwner','fTL','fPriority'].forEach(id => $g(id).addEventListener('input', apply));
+  $g('fClear').addEventListener('click', () => {
+    ['fSearch','fStatus','fOwner','fTL','fPriority'].forEach(id => $g(id).value='');
+    sortKey = null;
+    document.querySelectorAll('#' + px + 'tT th').forEach(th => th.classList.remove('sort-asc','sort-desc'));
+    apply();
+  });
+  document.querySelectorAll('#' + px + 'tT th').forEach(th => th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k'); if(!k) return;
+    if(sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+    document.querySelectorAll('#' + px + 'tT th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    apply();
+  }));
+  apply();
+}
+
+function setupBugFilters(D, px){
+  const B = D.bugs;
+  function uniques(arr){return [...new Set(arr.filter(Boolean))].sort();}
+  function fillSel(id, arr){
+    const sel = document.getElementById(px + id); if(!sel) return;
+    arr.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+  }
+  fillSel('bStatus', uniques(B.map(b => b.status)));
+  fillSel('bSeverity', uniques(B.map(b => b.severity)));
+  fillSel('bAssignee', uniques(B.map(b => b.assignee)));
+
+  function statusBadge(s){
+    const map = {Done:'b-green',Closed:'b-amber',Resolved:'b-green',Open:'b-red','In progress':'b-purple'};
+    return `<span class="badge ${map[s]||'b-grey'}">${escapeHtml(s||'')}</span>`;
+  }
+  function sevBadge(s){
+    const map = {Critical:'b-red',Major:'b-red',High:'b-red',Medium:'b-amber',Minor:'b-blue',Low:'b-blue',Trivial:'b-grey'};
+    return `<span class="badge ${map[s]||'b-grey'}">${escapeHtml(s||'')}</span>`;
+  }
+  function $g(id){ return document.getElementById(px + id); }
+  let sortKey = null, sortDir = 1;
+  function apply(){
+    const q = $g('bSearch').value.toLowerCase();
+    const fs = $g('bStatus').value, fsv = $g('bSeverity').value, fa = $g('bAssignee').value;
+    let rows = B.filter(b => {
+      if(q && !((b.title||'').toLowerCase().includes(q) || (b.tags||'').toLowerCase().includes(q) || (b.assignee||'').toLowerCase().includes(q))) return false;
+      if(fs && b.status !== fs) return false;
+      if(fsv && b.severity !== fsv) return false;
+      if(fa && b.assignee !== fa) return false;
+      return true;
+    });
+    if(sortKey){
+      rows = rows.slice().sort((a,b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        if(av==null) av=''; if(bv==null) bv='';
+        return String(av).localeCompare(String(bv))*sortDir;
+      });
+    }
+    $g('bBody').innerHTML = rows.map(b => `<tr>
+      <td><strong>${escapeHtml(b.id)}</strong></td>
+      <td>${escapeHtml(b.title)}</td>
+      <td>${escapeHtml(b.reporter||'')}</td><td>${escapeHtml(b.assignee||'')}</td>
+      <td>${sevBadge(b.severity)}</td><td>${statusBadge(b.status)}</td>
+      <td class="mute">${escapeHtml(b.created_iso||'')}</td>
+      <td><span class="mute" style="font-size:12px">${escapeHtml(b.classification||'')}</span></td>
+    </tr>`).join('');
+    $g('bCount').textContent = rows.length + ' of ' + B.length + ' bugs';
+  }
+  ['bSearch','bStatus','bSeverity','bAssignee'].forEach(id => $g(id).addEventListener('input', apply));
+  $g('bClear').addEventListener('click', () => {
+    ['bSearch','bStatus','bSeverity','bAssignee'].forEach(id => $g(id).value='');
+    sortKey = null;
+    document.querySelectorAll('#' + px + 'tBugs th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+    apply();
+  });
+  document.querySelectorAll('#' + px + 'tBugs th').forEach(th => th.addEventListener('click', () => {
+    const k = th.getAttribute('data-k'); if(!k) return;
+    if(sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+    document.querySelectorAll('#' + px + 'tBugs th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    apply();
+  }));
+  apply();
+}
+
+function drawSprintCharts(D, px){
+  Chart.defaults.font.family = "-apple-system,Segoe UI,Roboto,Inter,sans-serif";
+  Chart.defaults.font.size = 12;
+  const palette = ["#16a34a","#2563eb","#d97706","#7c3aed","#0d9488","#dc2626","#64748b","#ec4899"];
+  const $c = id => document.getElementById(px + id);
+
+  if($c('cStatus')) new Chart($c('cStatus'), {
+    type:'doughnut',
+    data:{ labels: Object.keys(D.statusCounts), datasets:[{data: Object.values(D.statusCounts), backgroundColor: palette}] },
+    options:{ plugins:{legend:{position:'bottom'}} }
+  });
+
+  const tlEntries = Object.entries(D.tlStats).sort((a,b)=>b[1].p - a[1].p);
+  const tlLabels = tlEntries.map(e => e[0].replace(/^Sprint \d+ - /, ''));
+  if($c('cTaskList')) new Chart($c('cTaskList'), {
+    type:'bar',
+    data:{ labels: tlLabels, datasets:[
+      {label:'Planned', data: tlEntries.map(e=>e[1].p.toFixed(1)), backgroundColor:'#2563eb'},
+      {label:'Actual',  data: tlEntries.map(e=>e[1].a.toFixed(2)), backgroundColor:'#16a34a'},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}, plugins:{legend:{position:'bottom'}} }
+  });
+
+  const resLabels = D.tracked;
+  if($c('cResHrs')) new Chart($c('cResHrs'), {
+    type:'bar',
+    data:{ labels: resLabels, datasets:[
+      {label:'Planned', data: resLabels.map(r=>D.resources[r].planned.toFixed(1)), backgroundColor:'#2563eb'},
+      {label:'Actual',  data: resLabels.map(r=>D.resources[r].actual.toFixed(2)), backgroundColor:'#16a34a'},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}, plugins:{legend:{position:'bottom'}} }
+  });
+  if($c('cResTasks')) new Chart($c('cResTasks'), {
+    type:'bar',
+    data:{ labels: resLabels, datasets:[
+      {label:'Done / Closed', data: resLabels.map(r=>D.resources[r].done), backgroundColor:'#16a34a'},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}, plugins:{legend:{position:'bottom'}} }
+  });
+
+  if($c('cBugSev')) new Chart($c('cBugSev'), {
+    type:'doughnut',
+    data:{ labels: Object.keys(D.bugSeverityCounts), datasets:[{data: Object.values(D.bugSeverityCounts), backgroundColor: palette}] },
+    options:{ plugins:{legend:{position:'bottom'}} }
+  });
+  if($c('cBugAss')) new Chart($c('cBugAss'), {
+    type:'bar',
+    data:{ labels: Object.keys(D.bugAssigneeCounts), datasets:[{label:'Bugs assigned', data: Object.values(D.bugAssigneeCounts), backgroundColor:'#d97706'}] },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true,ticks:{stepSize:1}}}, plugins:{legend:{display:false}} }
+  });
+}
+
+/* ============================================================
+   RENDER MULTI-SPRINT REPORT
+   ============================================================ */
+function renderMulti(payloads){
+  const M = {
+    project: state.projectName || 'Project',
+    title: state.reportTitle || 'Multi-Sprint Monitoring Report',
+    reportDate: new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}),
+  };
+
+  // Aggregate cross-sprint summary
+  const agg = {
+    sprints: payloads.length,
+    total_tasks: payloads.reduce((a,p)=>a+p.totals.total_tasks,0),
+    delivered: payloads.reduce((a,p)=>a+p.totals.delivered,0),
+    total_planned: payloads.reduce((a,p)=>a+p.totals.total_planned,0),
+    total_actual: payloads.reduce((a,p)=>a+p.totals.total_actual,0),
+    moved: payloads.reduce((a,p)=>a+p.totals.moved_count,0),
+    bug_total: payloads.reduce((a,p)=>a+p.totals.bug_total,0),
+    bug_open: payloads.reduce((a,p)=>a+p.totals.bug_open,0),
+    bug_closed: payloads.reduce((a,p)=>a+p.totals.bug_closed,0),
+    health_counts: {GREEN:0, AMBER:0, RED:0},
+  };
+  payloads.forEach(p => agg.health_counts[p.health]++);
+  const overallHealth = agg.health_counts.RED > 0 ? 'RED' : agg.health_counts.AMBER > 0 ? 'AMBER' : 'GREEN';
+  const overallTaskPct = agg.total_tasks > 0 ? (agg.delivered/agg.total_tasks)*100 : 0;
+  const overallHourPct = agg.total_planned > 0 ? (agg.total_actual/agg.total_planned)*100 : 0;
+  const overallBugPct = agg.bug_total > 0 ? (agg.bug_closed/agg.bug_total)*100 : null;
+
+  // Per-resource roll-up across sprints
+  const xResources = {};
+  payloads.forEach(p => {
+    p.tracked.forEach(o => {
+      if(!xResources[o]) xResources[o] = {tasks:0, done:0, planned:0, actual:0, bugA:0, bugR:0, bugP:0, bugRep:0, sprintsActive:0};
+      const s = p.resources[o];
+      xResources[o].tasks += s.tasks;
+      xResources[o].done += s.done;
+      xResources[o].planned += s.planned;
+      xResources[o].actual += s.actual;
+      xResources[o].bugA += s.bugA;
+      xResources[o].bugR += s.bugR;
+      xResources[o].bugP += s.bugP;
+      xResources[o].bugRep += s.bugRep;
+      if(s.tasks > 0) xResources[o].sprintsActive++;
+    });
+  });
+  const trackedAll = Object.keys(xResources).sort();
+
+  // Trends (sprint-over-sprint deltas)
+  const trends = payloads.map((p, i) => {
+    if(i === 0) return {taskPct:null, hourPct:null, bugClose:null, bugTotal:null};
+    const prev = payloads[i-1];
+    return {
+      taskPct: p.totals.task_pct - prev.totals.task_pct,
+      hourPct: p.totals.hour_pct - prev.totals.hour_pct,
+      bugClose: (p.totals.bug_closure_pct || 0) - (prev.totals.bug_closure_pct || 0),
+      bugTotal: p.totals.bug_total - prev.totals.bug_total,
+    };
+  });
+
+  // Repeated risks (which patterns recur across sprints)
+  const repeatedRisks = [];
+  const lowUtilSprints = payloads.filter(p => p.totals.hour_pct < 75).map(p => p.short);
+  const overUtilSprints = payloads.filter(p => p.totals.hour_pct > 110).map(p => p.short);
+  const movedSprints = payloads.filter(p => p.totals.moved_count > 0);
+  const openBugSprints = payloads.filter(p => p.totals.bug_open > 0);
+  const incompleteSprints = payloads.filter(p => p.totals.task_pct < 100);
+  if(lowUtilSprints.length >= 2) repeatedRisks.push({label:'Low effort utilisation', detail:`${lowUtilSprints.join(', ')} all logged below 75% of planned hours — recurring estimation buffer or worklog discipline gap.`});
+  if(overUtilSprints.length >= 2) repeatedRisks.push({label:'Effort overrun', detail:`${overUtilSprints.join(', ')} exceeded planned hours — recurring underestimation pattern.`});
+  if(movedSprints.length >= 2) repeatedRisks.push({label:'Recurring scope adjustments', detail:`${movedSprints.length} sprints required tasks to be re-scoped to a future sprint — review commitment vs capacity at sprint planning.`});
+  if(openBugSprints.length >= 2) repeatedRisks.push({label:'Open bugs carrying across sprints', detail:`${openBugSprints.length} sprints closed with open bugs; ensure carry-forward bugs are explicitly tracked into the next sprint.`});
+  if(incompleteSprints.length >= 2) repeatedRisks.push({label:'Incomplete delivery pattern', detail:`${incompleteSprints.length} sprints did not reach 100% in-scope task completion. Investigate root cause (estimation, blockers, or scope creep).`});
+  if(repeatedRisks.length === 0) repeatedRisks.push({label:'No recurring risks detected', detail:'Across the selected sprints, no clear repeated risk pattern emerged from the data.'});
+
+  // Improvements sprint-over-sprint
+  const improvements = [];
+  for(let i=1; i<payloads.length; i++){
+    const cur = payloads[i], prev = payloads[i-1];
+    if(cur.totals.task_pct > prev.totals.task_pct + 5)
+      improvements.push(`${cur.short}: task completion improved by ${(cur.totals.task_pct - prev.totals.task_pct).toFixed(1)} pp vs ${prev.short}.`);
+    if(cur.totals.hour_pct > prev.totals.hour_pct + 5 && cur.totals.hour_pct <= 100)
+      improvements.push(`${cur.short}: effort logging discipline improved (${(cur.totals.hour_pct - prev.totals.hour_pct).toFixed(1)} pp gain in utilization).`);
+    if(prev.totals.bug_open > 0 && cur.totals.bug_open < prev.totals.bug_open)
+      improvements.push(`${cur.short}: open-bug count down from ${prev.totals.bug_open} to ${cur.totals.bug_open} vs ${prev.short}.`);
+    if(cur.totals.moved_count < prev.totals.moved_count)
+      improvements.push(`${cur.short}: fewer re-scoped tasks (${cur.totals.moved_count} vs ${prev.totals.moved_count} in ${prev.short}).`);
+  }
+  if(improvements.length === 0) improvements.push('No notable improvements across the selected sprints.');
+
+  // ===== Build header / nav =====
+  const healthCls = overallHealth === 'GREEN' ? 'green' : overallHealth === 'AMBER' ? 'amber' : 'red';
+
+  document.getElementById('reportHeader').innerHTML = `
+    <h1>${escapeHtml(M.title)}</h1>
+    <div class="sub">${escapeHtml(M.project)} &middot; ${payloads.length} sprints &middot; generated ${escapeHtml(M.reportDate)}</div>
+    <div class="pillrow">
+      <span class="hp">Project: ${escapeHtml(M.project)}</span>
+      <span class="hp">Sprints: ${payloads.map(p=>escapeHtml(p.short)).join(', ')}</span>
+      <span class="hp">Overall health: ${overallHealth}</span>
+      <span class="hp">Total tasks: ${agg.total_tasks}</span>
+      <span class="hp">Total bugs: ${agg.bug_total}</span>
+    </div>`;
+
+  // Multi-sprint mode: two tabs — Dashboard / Detailed Sprint
+  document.getElementById('viewTabs').innerHTML = `
+    <div class="view-tabs">
+      <div class="tabs">
+        <button id="tabDashboard" class="active" type="button">Dashboard</button>
+        <button id="tabDetail" type="button">Detailed Sprint</button>
+      </div>
+      <div class="right">
+        <span class="mute">${payloads.length} sprints loaded</span>
+        ${newReportLink()}
+      </div>
+    </div>`;
+
+  // ===== Build body =====
+  const body = document.getElementById('reportBody');
+
+  // Comparison sections
+  let html = `<div class="view-pane active" id="dashView">
+    <section id="cExec">
+      <h2>1. Consolidated Executive Summary</h2>
+      <div class="lede">Cross-sprint delivery overview for the ${payloads.length} selected sprints.</div>
+      <div class="kpis">
+        <div class="kpi ${healthCls}"><div class="l">Overall health</div><div class="v">${overallHealth}</div><div class="d">Worst-of-${payloads.length}</div></div>
+        <div class="kpi ${overallTaskPct >= 100 ? 'green' : overallTaskPct >= 80 ? 'amber' : 'red'}"><div class="l">Task completion</div><div class="v">${overallTaskPct.toFixed(1)}%</div><div class="d">${agg.delivered} of ${agg.total_tasks} delivered</div></div>
+        <div class="kpi ${overallHourPct >= 80 ? 'green' : overallHourPct >= 50 ? 'amber' : 'red'}"><div class="l">Effort utilization</div><div class="v">${overallHourPct.toFixed(1)}%</div></div>
+        <div class="kpi"><div class="l">Total planned</div><div class="v num">${agg.total_planned.toFixed(1)}</div><div class="d">hours</div></div>
+        <div class="kpi"><div class="l">Total logged</div><div class="v num">${agg.total_actual.toFixed(2)}</div><div class="d">hours</div></div>
+        <div class="kpi"><div class="l">Re-scoped tasks</div><div class="v num">${agg.moved}</div></div>
+        <div class="kpi ${agg.bug_open > 0 ? 'red' : 'green'}"><div class="l">Open bugs</div><div class="v num">${agg.bug_open}</div><div class="d">${agg.bug_total} total / ${agg.bug_closed} closed</div></div>
+        <div class="kpi"><div class="l">Bug closure</div><div class="v">${overallBugPct == null ? 'N/A' : overallBugPct.toFixed(1) + '%'}</div></div>
+      </div>
+      <div class="grid-2" style="margin-top:18px">
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Health distribution</h3>
+          <div style="display:flex;gap:14px;font-size:13px">
+            <div><span class="health-dot green"></span>Green: <strong>${agg.health_counts.GREEN}</strong></div>
+            <div><span class="health-dot amber"></span>Amber: <strong>${agg.health_counts.AMBER}</strong></div>
+            <div><span class="health-dot red"></span>Red: <strong>${agg.health_counts.RED}</strong></div>
+          </div>
+          <h3 style="margin:18px 0 8px;font-size:14px;font-weight:600">Improvements sprint-over-sprint</h3>
+          <ul class="list-clean">${improvements.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Repeated risks across sprints</h3>
+          <ul class="list-clean">${repeatedRisks.map(r => `<li><strong>${escapeHtml(r.label)}:</strong> ${escapeHtml(r.detail)}</li>`).join('')}</ul>
+        </div>
+      </div>
+      <div class="narrative" style="margin-top:18px">
+        <p><strong>Management read:</strong> Across ${payloads.length} sprints, ${agg.delivered} of ${agg.total_tasks} in-scope tasks were delivered (${overallTaskPct.toFixed(1)}%) with ${agg.total_actual.toFixed(0)} hrs logged against ${agg.total_planned.toFixed(0)} planned (${overallHourPct.toFixed(1)}%). ${agg.moved} task(s) were re-scoped, and ${agg.bug_total} bug(s) were filed in-window with ${agg.bug_open} still open. Overall delivery health is <strong>${overallHealth}</strong>.</p>
+      </div>
+    </section>
+
+    <section id="cDash">
+      <h2>2. Sprint Comparison Dashboard</h2>
+      <div class="lede">Side-by-side metrics across the ${payloads.length} selected sprints.</div>
+      <div class="grid-2">
+        <div><div style="font-weight:500;margin-bottom:6px">Planned vs Actual hours by sprint</div><div class="chartwrap tall"><canvas id="xcHrs"></canvas></div></div>
+        <div><div style="font-weight:500;margin-bottom:6px">Task completion % by sprint</div><div class="chartwrap tall"><canvas id="xcTaskPct"></canvas></div></div>
+      </div>
+      <div class="grid-2" style="margin-top:18px">
+        <div><div style="font-weight:500;margin-bottom:6px">Task status breakdown by sprint</div><div class="chartwrap tall"><canvas id="xcTaskBreak"></canvas></div></div>
+        <div><div style="font-weight:500;margin-bottom:6px">Bugs by sprint (open / closed / in-progress)</div><div class="chartwrap tall"><canvas id="xcBugs"></canvas></div></div>
+      </div>
+      <h3 style="margin:22px 0 8px;font-size:14px;font-weight:600">Sprint comparison table</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th>Sprint</th><th>Window</th><th>Health</th>
+            <th>Tasks</th><th>Done</th><th>In Progress</th><th>Pending</th>
+            <th>Re-scoped</th><th>Plan&nbsp;hrs</th><th>Actual&nbsp;hrs</th><th>Variance</th>
+            <th>Task %</th><th>Util %</th>
+            <th>Bugs (T/O/C)</th><th>Bug Closure %</th>
+          </tr></thead>
+          <tbody>
+          ${payloads.map((p,i) => {
+            const tot = p.totals;
+            const variance = (tot.total_planned - tot.total_actual).toFixed(1);
+            const cls = p.health === 'GREEN' ? 'green' : p.health === 'AMBER' ? 'amber' : 'red';
+            const pendingN = tot.total_tasks - tot.delivered - tot.in_progress;
+            return `<tr>
+              <td><strong>${escapeHtml(p.sprintName)}</strong></td>
+              <td class="mute" style="font-size:12px">${escapeHtml(fmtDay(p.sprintStart) || '—')} → ${escapeHtml(fmtDay(p.sprintEnd) || '—')}</td>
+              <td><span class="badge b-${cls}">${p.health}</span></td>
+              <td class="num">${tot.total_tasks}</td>
+              <td class="num">${tot.delivered}</td>
+              <td class="num">${tot.in_progress}</td>
+              <td class="num">${pendingN >= 0 ? pendingN : 0}</td>
+              <td class="num">${tot.moved_count}</td>
+              <td class="num">${tot.total_planned.toFixed(1)}</td>
+              <td class="num">${tot.total_actual.toFixed(2)}</td>
+              <td class="num"><span class="badge b-${variance >= 0 ? 'green' : 'red'}">${variance}</span></td>
+              <td class="num">${tot.task_pct.toFixed(1)}%</td>
+              <td class="num">${tot.hour_pct.toFixed(1)}%</td>
+              <td class="num">${tot.bug_total} / ${tot.bug_open} / ${tot.bug_closed}</td>
+              <td class="num">${tot.bug_closure_pct == null ? 'N/A' : tot.bug_closure_pct.toFixed(1) + '%'}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="footnote">Bugs (T/O/C) = Total / Open / Closed in-window. Variance = Planned − Actual (positive = under).</div>
+    </section>
+
+    <section id="cPvA">
+      <h2>3. Sprint-Wise Planned vs Actual Comparison</h2>
+      <div class="lede">Effort reconciliation, sprint by sprint.</div>
+      <div class="tablewrap">
+        <table><thead><tr>
+          <th>Sprint</th><th>Tasks</th><th>Planned&nbsp;hrs</th><th>Actual&nbsp;hrs</th>
+          <th>Variance</th><th>Util %</th><th>Trend vs prev</th>
+        </tr></thead>
+        <tbody>
+          ${payloads.map((p,i) => {
+            const t = p.totals;
+            const variance = (t.total_planned - t.total_actual).toFixed(1);
+            const trend = trends[i].hourPct;
+            const trendHtml = trend == null ? '<span class="mute">—</span>' :
+              trend > 1 ? `<span class="trend-up">▲ +${trend.toFixed(1)} pp</span>` :
+              trend < -1 ? `<span class="trend-down">▼ ${trend.toFixed(1)} pp</span>` :
+              `<span class="trend-flat">▬ flat</span>`;
+            return `<tr>
+              <td><strong>${escapeHtml(p.sprintName)}</strong></td>
+              <td class="num">${t.total_tasks}</td>
+              <td class="num">${t.total_planned.toFixed(1)}</td>
+              <td class="num">${t.total_actual.toFixed(2)}</td>
+              <td class="num"><span class="badge b-${variance >= 0 ? 'green' : 'red'}">${variance}</span></td>
+              <td class="num">${t.hour_pct.toFixed(1)}%</td>
+              <td>${trendHtml}</td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>
+      </div>
+    </section>
+
+    <section id="cTaskBug">
+      <h2>4. Sprint-Wise Task and Bug Summary</h2>
+      <div class="lede">Delivery and quality metrics per sprint.</div>
+      <div class="grid-2">
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Tasks per sprint</h3>
+          <div class="tablewrap">
+            <table><thead><tr><th>Sprint</th><th>Total</th><th>Done</th><th>In&nbsp;Prog</th><th>Pending</th><th>Re-scoped</th><th>Task %</th></tr></thead>
+            <tbody>
+              ${payloads.map(p => {
+                const t = p.totals;
+                const pending = Math.max(0, t.total_tasks - t.delivered - t.in_progress);
+                return `<tr>
+                  <td><strong>${escapeHtml(p.short)}</strong></td>
+                  <td class="num">${t.total_tasks}</td><td class="num">${t.delivered}</td>
+                  <td class="num">${t.in_progress}</td><td class="num">${pending}</td>
+                  <td class="num">${t.moved_count}</td>
+                  <td class="num">${t.task_pct.toFixed(1)}%</td>
+                </tr>`;
+              }).join('')}
+            </tbody></table>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Bugs per sprint</h3>
+          <div class="tablewrap">
+            <table><thead><tr><th>Sprint</th><th>Total</th><th>Open</th><th>Closed</th><th>In&nbsp;Prog</th><th>High</th><th>Closure %</th></tr></thead>
+            <tbody>
+              ${payloads.map(p => {
+                const t = p.totals;
+                return `<tr>
+                  <td><strong>${escapeHtml(p.short)}</strong></td>
+                  <td class="num">${t.bug_total}</td><td class="num">${t.bug_open}</td>
+                  <td class="num">${t.bug_closed}</td><td class="num">${t.bug_inprog}</td>
+                  <td class="num">${t.bug_high}</td>
+                  <td class="num">${t.bug_closure_pct == null ? '—' : t.bug_closure_pct.toFixed(1) + '%'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cRes">
+      <h2>5. Sprint-Wise Resource Utilization Summary</h2>
+      <div class="lede">Per-resource hours and task contribution rolled up across the selected sprints.</div>
+      <div class="tablewrap">
+        <table><thead><tr>
+          <th>Resource</th><th>Sprints active</th><th>Tasks</th><th>Done/Closed</th>
+          <th>Planned</th><th>Actual</th><th>Util %</th><th>Eff %</th>
+          ${agg.bug_total > 0 ? '<th>Bugs (A/R/P)</th><th>Bugs Reported</th>' : ''}
+        </tr></thead>
+        <tbody>
+        ${trackedAll.map(o => {
+          const s = xResources[o];
+          const eff = s.planned > 0 ? (s.actual/s.planned)*100 : 0;
+          const util = agg.total_actual > 0 ? (s.actual/agg.total_actual)*100 : 0;
+          const utilCls = util > 30 ? 'green' : util > 10 ? 'amber' : 'red';
+          return `<tr>
+            <td><strong>${escapeHtml(o)}</strong></td>
+            <td class="num">${s.sprintsActive}</td>
+            <td class="num">${s.tasks}</td><td class="num">${s.done}</td>
+            <td class="num">${s.planned.toFixed(1)}</td><td class="num">${s.actual.toFixed(2)}</td>
+            <td><span class="badge b-${utilCls}">${util.toFixed(1)}%</span></td>
+            <td class="num">${eff.toFixed(1)}%</td>
+            ${agg.bug_total > 0 ? `<td class="num">${s.bugA} / ${s.bugR} / ${s.bugP}</td><td class="num">${s.bugRep}</td>` : ''}
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+      </div>
+      <h3 style="margin:22px 0 8px;font-size:14px;font-weight:600">Per-sprint utilisation by resource</h3>
+      <div class="tablewrap">
+        <table><thead><tr>
+          <th>Resource</th>
+          ${payloads.map(p => `<th>${escapeHtml(p.short)} (Pl/Ac)</th>`).join('')}
+        </tr></thead>
+        <tbody>
+        ${trackedAll.map(o => `<tr>
+          <td><strong>${escapeHtml(o)}</strong></td>
+          ${payloads.map(p => {
+            const s = p.resources[o];
+            if(!s || s.tasks === 0) return `<td class="mute">—</td>`;
+            return `<td class="num">${s.planned.toFixed(1)} / ${s.actual.toFixed(2)}</td>`;
+          }).join('')}
+        </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </section>
+
+    <section id="cRisks">
+      <h2>6. Overall Risks, Blockers &amp; Dependencies</h2>
+      <div class="lede">Aggregate of repeated patterns across the selected sprints.</div>
+      <div class="tablewrap">
+        <table><thead><tr><th>Category</th><th>Detail</th></tr></thead>
+        <tbody>
+          ${repeatedRisks.map(r => `<tr><td><strong>${escapeHtml(r.label)}</strong></td><td>${escapeHtml(r.detail)}</td></tr>`).join('')}
+          <tr><td><strong>Sprints with re-scoped tasks</strong></td><td>${movedSprints.length === 0 ? 'None.' : movedSprints.map(p => `${escapeHtml(p.short)} (${p.totals.moved_count})`).join(', ')}</td></tr>
+          <tr><td><strong>Sprints with open bugs</strong></td><td>${openBugSprints.length === 0 ? 'None.' : openBugSprints.map(p => `${escapeHtml(p.short)} (${p.totals.bug_open} open)`).join(', ')}</td></tr>
+          <tr><td><strong>Sprints below 75% utilisation</strong></td><td>${lowUtilSprints.length === 0 ? 'None.' : lowUtilSprints.join(', ') + ' — review estimation buffer or worklog discipline.'}</td></tr>
+          <tr><td><strong>Sprints with incomplete delivery</strong></td><td>${incompleteSprints.length === 0 ? 'None — all selected sprints reached 100% in-scope completion.' : incompleteSprints.map(p => `${escapeHtml(p.short)} (${p.totals.task_pct.toFixed(1)}%)`).join(', ')}</td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <section id="cNext">
+      <h2>7. Overall Next Sprint Recommendations</h2>
+      <div class="lede">Cross-sprint guidance for upcoming sprints.</div>
+      <div class="twocol">
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Delivery focus</h3>
+          <ul class="list-clean">
+            ${agg.moved > 0 ? `<li>Carry forward all ${agg.moved} re-scoped task(s) into the next sprint with revised estimates and explicit acceptance criteria.</li>` : ''}
+            ${agg.bug_open > 0 ? `<li>Triage and close the ${agg.bug_open} open bug(s) early in the next sprint.</li>` : ''}
+            ${incompleteSprints.length > 0 ? `<li>Investigate root causes for incomplete-delivery sprints (${incompleteSprints.map(p=>p.short).join(', ')}) — reduce commitment or remove blockers.</li>` : ''}
+            <li>Surface a weekly burn-down using the same Zoho export to track progress mid-sprint.</li>
+          </ul>
+          <h3 style="margin:18px 0 8px;font-size:14px;font-weight:600">Estimation &amp; planning</h3>
+          <ul class="list-clean">
+            ${lowUtilSprints.length >= 2 ? `<li>Tighten estimation: ${lowUtilSprints.length} sprints below 75% utilisation suggests recurring buffer in plan.</li>` : ''}
+            ${overUtilSprints.length >= 2 ? `<li>Add capacity buffer: ${overUtilSprints.length} sprints exceeded 110% utilisation, indicating chronic underestimation.</li>` : ''}
+            <li>Cap any single task at 24 planned hours; split larger items into milestones.</li>
+            <li>Populate Start Date and Due Date at task creation to enable schedule-variance analysis.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px;font-size:14px;font-weight:600">Quality &amp; bug discipline</h3>
+          <ul class="list-clean">
+            <li>Make Affected Milestone and Release Milestone mandatory at bug creation so each bug clearly belongs to a sprint.</li>
+            <li>Differentiate &ldquo;in-sprint&rdquo; vs &ldquo;post-sprint UAT&rdquo; bugs with a flag.</li>
+            <li>Define an SLA for severity-1/2 bugs (target close within sprint).</li>
+            <li>Tag bugs to a parent feature/task ID to enable feature-level quality analytics.</li>
+          </ul>
+          <h3 style="margin:18px 0 8px;font-size:14px;font-weight:600">Worklog discipline</h3>
+          <ul class="list-clean">
+            <li>Mandate end-of-day timesheet entry for each tracked resource.</li>
+            <li>Disallow closing a task with 0 logged hours unless it is a 0-effort administrative item.</li>
+            <li>Plan recurring activities (DSM, client calls, code reviews) with realistic hour estimates.</li>
+            <li>Standardise the &ldquo;CLOSED &ndash; MOVED&rdquo; convention into a dedicated &ldquo;Re-scoped&rdquo; status.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  `;
+
+  // Close dashboard pane, open detail pane with sprint picker
+  html += `</div>
+    <div class="view-pane" id="detailView">
+      <div class="sprint-picker">
+        <span class="label">Showing</span>
+        <div class="pills">
+          ${payloads.map((p, i) => `
+            <button type="button" class="sprint-pill ${i === 0 ? 'active' : ''}" data-i="${i}">
+              <span class="health-dot ${p.health === 'GREEN' ? 'green' : p.health === 'AMBER' ? 'amber' : 'red'}"></span>
+              ${escapeHtml(p.short)}
+            </button>`).join('')}
+        </div>
+        <span class="meta" id="sprintMeta"></span>
+      </div>
+  `;
+
+  // Per-sprint detailed reports — wrap each in its own pane (only one shown at a time)
+  payloads.forEach((p, i) => {
+    const px = `s${i}_`;
+    html += `<div class="sprint-pane ${i === 0 ? 'active' : ''}" id="sp${i}">
+      <div class="section-divider">
+        <h2>${escapeHtml(p.sprintName)} &mdash; Detailed Report</h2>
+        <span class="pill"><span class="health-dot ${p.health === 'GREEN' ? 'green' : p.health === 'AMBER' ? 'amber' : 'red'}" style="background:#fff;opacity:.9"></span> ${p.health}</span>
+      </div>`;
+    html += renderSprintSections(p, px, false);
+    html += `</div>`;
+  });
+  html += `</div>`;  // close detailView
+
+  body.innerHTML = html;
+
+  // Populate per-sprint dynamic content (filters always; charts only for the visible sprint)
+  const chartsRendered = new Set();
+  payloads.forEach((p, i) => populateSprintSections(p, `s${i}_`, /*drawCharts*/ i === 0));
+  if(payloads.length > 0) chartsRendered.add(0);
+
+  // Comparison charts (dashboard view is active by default — safe to draw immediately)
+  drawComparisonCharts(payloads);
+
+  // Tab switching
+  const tabDashboard = document.getElementById('tabDashboard');
+  const tabDetail = document.getElementById('tabDetail');
+  const dashView = document.getElementById('dashView');
+  const detailView = document.getElementById('detailView');
+  function showDashboard(){
+    tabDashboard.classList.add('active'); tabDetail.classList.remove('active');
+    dashView.classList.add('active'); detailView.classList.remove('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function showDetail(){
+    tabDetail.classList.add('active'); tabDashboard.classList.remove('active');
+    detailView.classList.add('active'); dashView.classList.remove('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  tabDashboard.addEventListener('click', showDashboard);
+  tabDetail.addEventListener('click', showDetail);
+
+  // Sprint picker switching inside Detailed Sprint view
+  const sprintPills = body.querySelectorAll('.sprint-pill');
+  const sprintPanes = body.querySelectorAll('.sprint-pane');
+  function setSprintMeta(i){
+    const p = payloads[i];
+    document.getElementById('sprintMeta').innerHTML =
+      `${escapeHtml(p.sprintStartLabel)} → ${escapeHtml(p.sprintEndLabel)} &middot; ${p.totals.total_tasks} tasks &middot; ${p.totals.bug_total} bug(s)`;
+  }
+  sprintPills.forEach(btn => btn.addEventListener('click', () => {
+    const idx = parseInt(btn.dataset.i);
+    sprintPills.forEach(b => b.classList.toggle('active', b === btn));
+    sprintPanes.forEach((pane, j) => pane.classList.toggle('active', j === idx));
+    setSprintMeta(idx);
+    // Lazy chart render on first activation
+    if(!chartsRendered.has(idx)){
+      drawSprintCharts(payloads[idx], `s${idx}_`);
+      chartsRendered.add(idx);
+    }
+  }));
+  setSprintMeta(0);
+
+  attachBackLink();
+}
+
+function drawComparisonCharts(payloads){
+  Chart.defaults.font.family = "-apple-system,Segoe UI,Roboto,Inter,sans-serif";
+  Chart.defaults.font.size = 12;
+  const labels = payloads.map(p => p.short);
+
+  new Chart(document.getElementById('xcHrs'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Planned', data: payloads.map(p => p.totals.total_planned.toFixed(1)), backgroundColor: '#2563eb' },
+      { label: 'Actual',  data: payloads.map(p => p.totals.total_actual.toFixed(2)), backgroundColor: '#16a34a' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title:{display:true, text:'Hours'} } }, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  new Chart(document.getElementById('xcTaskPct'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Task completion %', data: payloads.map(p => p.totals.task_pct.toFixed(1)),
+        backgroundColor: '#16a34a', borderColor: '#16a34a', tension: 0.3, fill: false, pointRadius: 5 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 110, ticks: { callback: v => v + '%' } } }, plugins: { legend: { display: false } } }
+  });
+
+  // Stacked task breakdown per sprint
+  new Chart(document.getElementById('xcTaskBreak'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Done / Closed', data: payloads.map(p => p.totals.delivered), backgroundColor: '#16a34a' },
+      { label: 'In progress',   data: payloads.map(p => p.totals.in_progress), backgroundColor: '#d97706' },
+      { label: 'Pending',       data: payloads.map(p => Math.max(0, p.totals.total_tasks - p.totals.delivered - p.totals.in_progress)), backgroundColor: '#dc2626' },
+      { label: 'Re-scoped',     data: payloads.map(p => p.totals.moved_count), backgroundColor: '#7c3aed' },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  new Chart(document.getElementById('xcBugs'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Open',     data: payloads.map(p => p.totals.bug_open),    backgroundColor: '#dc2626' },
+      { label: 'In progress', data: payloads.map(p => p.totals.bug_inprog), backgroundColor: '#d97706' },
+      { label: 'Closed',   data: payloads.map(p => p.totals.bug_closed),  backgroundColor: '#16a34a' },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+</script>
+</body>
+</html>
