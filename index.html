@@ -199,6 +199,17 @@
   .ms-list .ms-name{font-weight:500;flex:1}
   .ms-list .ms-meta{color:var(--muted);font-size:11px}
   .ms-empty{padding:28px;text-align:center;color:var(--muted);font-size:13px}
+  /* Planned-hour override input inside the sprint row */
+  .ms-list .ms-override{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-left:6px}
+  .ms-list .ms-override input{width:70px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:#fff;color:var(--ink);font-family:inherit;outline:none;text-align:right}
+  .ms-list .ms-override input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-bg)}
+  .ms-list .ms-override .auto{font-size:10px;color:var(--muted);font-style:italic}
+  .ms-list .ms-override .reset{background:none;border:none;color:var(--blue);cursor:pointer;font-size:11px;padding:0;font-family:inherit;text-decoration:underline}
+  .ms-list .ms-override .reset:hover{color:#1d4ed8}
+  .ms-list .ms-override.dirty .auto{color:var(--amber);font-weight:600}
+
+  /* ✎ glyph on KPI cards with manual override */
+  .kpi .kpi-override-mark{position:absolute;top:8px;left:10px;font-size:11px;color:var(--amber);font-weight:600}
 
   .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
   @media(max-width:700px){.config-grid{grid-template-columns:1fr}}
@@ -300,6 +311,101 @@
   /* Section-header right-side actions */
   .section-actions{display:inline-flex;gap:8px;float:right}
 
+  /* === Phase B === */
+  /* Collapsible section toggle */
+  section > h2 .sec-toggle{background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:2px 6px;border-radius:4px;margin-right:6px;font-family:inherit;line-height:1;vertical-align:middle;width:20px;display:inline-flex;align-items:center;justify-content:center;transition:transform .15s, background .15s}
+  section > h2 .sec-toggle:hover{background:#f1f5f9;color:var(--ink)}
+  section.collapsed > h2 .sec-toggle{transform:rotate(-90deg)}
+  section.collapsed > *:not(h2){display:none}
+  /* Collapse-all master button in tab bar */
+  .view-tabs .right .btn-collapse{background:#f1f5f9;border:1px solid var(--line);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:#475569;font-family:inherit}
+  .view-tabs .right .btn-collapse:hover{background:#e2e8f0;color:var(--ink)}
+
+  /* Burn-down chart */
+  .burndown-block{background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+  .burndown-block h3{margin:0 0 4px;font-size:14px;font-weight:600}
+  .burndown-block .legend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:6px}
+  .burndown-block .legend span::before{content:"";display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .burndown-block .legend .ideal::before{background:#94a3b8}
+  .burndown-block .legend .actual::before{background:var(--blue)}
+  .burndown-block .legend .today::before{background:var(--red);width:2px;height:10px;vertical-align:middle}
+  .burndown-block .chartwrap{height:280px}
+  .burndown-empty{padding:22px;text-align:center;color:var(--muted);font-size:13px}
+
+  /* Forecast end-date card — leans on existing .kpi but adds delta colouring */
+  .kpi .forecast-delta{font-size:11px;font-weight:600;margin-top:3px}
+  .kpi .forecast-delta.ahead{color:var(--green)}
+  .kpi .forecast-delta.ontime{color:var(--green)}
+  .kpi .forecast-delta.late-mild{color:var(--amber)}
+  .kpi .forecast-delta.late-bad{color:var(--red)}
+
+  /* Data quality scorecard */
+  .data-quality{background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:14px 16px;margin-top:14px}
+  .data-quality h3{margin:0 0 6px;font-size:13px;font-weight:600;color:#1e3a8a;display:flex;align-items:center;gap:6px}
+  .data-quality .dq-icon{display:inline-block;width:18px;height:18px;background:var(--blue);color:#fff;border-radius:50%;text-align:center;line-height:18px;font-size:11px;font-weight:700}
+  .data-quality .dq-banner{padding:10px 12px;background:#fff;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;color:#1e40af;margin-bottom:8px}
+  .data-quality .dq-items{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:8px;margin-top:8px}
+  .data-quality .dq-item{background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s;text-align:left;font-family:inherit}
+  .data-quality .dq-item:hover{border-color:var(--blue);box-shadow:0 2px 6px rgba(37,99,235,.15);transform:translateY(-1px)}
+  .data-quality .dq-cnt{font-size:18px;font-weight:600;color:#1e3a8a;line-height:1}
+  .data-quality .dq-label{font-size:11px;color:#1e3a8a;margin-top:4px;font-weight:500}
+  .data-quality.clean{background:#dcfce7;border-color:#86efac}
+  .data-quality.clean h3{color:#14532d}
+  .data-quality.clean .dq-icon{background:var(--green)}
+  .data-quality .dq-empty{padding:10px;text-align:center;color:#14532d;font-size:13px;font-weight:500}
+
+  /* Print: force collapse to expand */
+  @media print {
+    section.collapsed > *:not(h2){display:block !important}
+    section.collapsed > h2 .sec-toggle{display:none}
+    .view-tabs .right .btn-collapse{display:none}
+  }
+
+  /* === Phase C === */
+  /* Carryover-chain panel */
+  .chain-panel{background:#fdf4ff;border:1px solid #d8b4fe;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .chain-panel h3{margin:0 0 8px;font-size:13px;font-weight:600;color:#6b21a8;display:flex;align-items:center;gap:6px}
+  .chain-panel .chain-icon{display:inline-block;width:18px;height:18px;background:#a855f7;color:#fff;border-radius:50%;text-align:center;line-height:18px;font-size:11px;font-weight:700}
+  .chain-panel .chain-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .chain-panel .chain-row{background:#fff;border:1px solid #e9d5ff;border-radius:8px;padding:10px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;font-size:13px}
+  .chain-panel .chain-row .moves{background:#a855f7;color:#fff;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap}
+  .chain-panel .chain-row .moves.severe{background:#b91c1c}
+  .chain-panel .chain-row .name{color:#1e1b4b;line-height:1.4}
+  .chain-panel .chain-row .stops{font-size:11px;color:#6b21a8;margin-top:4px;font-family:monospace;letter-spacing:.02em}
+  .chain-panel .chain-row .stops .arr{margin:0 4px;color:#a855f7}
+  .chain-panel .chain-row .stops .landed{background:#dcfce7;color:#14532d;padding:1px 6px;border-radius:4px;margin-left:6px}
+  .chain-panel .chain-row .stops .alive{background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;margin-left:6px}
+  .chain-panel.clean{background:#dcfce7;border-color:#86efac}
+  .chain-panel.clean h3{color:#14532d}
+  .chain-panel.clean .chain-icon{background:var(--green)}
+  .chain-panel .chain-empty{padding:10px;text-align:center;color:#14532d;font-size:13px;font-weight:500}
+
+  /* Retrospective questions panel */
+  .retro-panel{background:#f0fdfa;border:1px solid #5eead4;border-radius:10px;padding:14px 16px;margin-top:14px}
+  .retro-panel h3{margin:0 0 8px;font-size:13px;font-weight:600;color:#115e59;display:flex;align-items:center;gap:6px}
+  .retro-panel .retro-icon{display:inline-block;width:18px;height:18px;background:var(--teal);color:#fff;border-radius:50%;text-align:center;line-height:18px;font-size:11px;font-weight:700}
+  .retro-panel .retro-actions{float:right}
+  .retro-panel ol{margin:6px 0 0 0;padding:0;counter-reset:retro;list-style:none}
+  .retro-panel ol li{counter-increment:retro;padding:10px 12px 10px 38px;border-bottom:1px solid #ccfbf1;position:relative;font-size:13px;color:#0f172a;line-height:1.5}
+  .retro-panel ol li::before{content:counter(retro);position:absolute;left:10px;top:11px;width:22px;height:22px;background:var(--teal);color:#fff;border-radius:50%;text-align:center;line-height:22px;font-size:11px;font-weight:600}
+  .retro-panel ol li:last-child{border-bottom:none}
+  .retro-panel .retro-q{font-weight:500;color:#0f172a}
+  .retro-panel .retro-cat{display:inline-block;background:#ccfbf1;color:#115e59;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600;margin-right:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.04em}
+  .retro-panel .retro-cat.red{background:var(--red-bg);color:var(--red)}
+  .retro-panel .retro-cat.amber{background:var(--amber-bg);color:var(--amber)}
+  .retro-panel .retro-ev{margin-top:4px;font-size:11px;color:#475569;font-family:-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+  .retro-panel .retro-empty{padding:12px;text-align:center;color:#115e59;font-size:13px;font-weight:500}
+
+  /* Knowledge concentration table */
+  .kc-block{margin-top:18px}
+  .kc-block h3{margin:0 0 8px;font-size:14px;font-weight:600}
+  .kc-block .kc-tip{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:6px}
+  .kc-block table .kc-bar{width:120px;height:10px;background:#f1f5f9;border-radius:6px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}
+  .kc-block table .kc-bar > span{display:block;height:100%}
+  .kc-block table .kc-bar.green > span{background:var(--green)}
+  .kc-block table .kc-bar.amber > span{background:var(--amber)}
+  .kc-block table .kc-bar.red > span{background:var(--red)}
+
   @media print{
     .nav, .printbtn, .filters, #upload-screen, .view-tabs, .sprint-picker{display:none !important}
     section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}
@@ -400,6 +506,13 @@
               </select>
             </label>
           </div>
+          <div class="config-grid" style="margin-top:10px">
+            <label>
+              Total planned hours (override) <span class="config-help" id="planAutoHint">auto-calculated from task &quot;Work hours&quot;</span>
+              <input type="number" id="totalPlannedOverride" min="0" step="0.5" placeholder="Leave blank to auto-calculate" />
+            </label>
+            <div></div>
+          </div>
         </div>
       </div>
 
@@ -433,8 +546,9 @@
    ============================================================ */
 const state = {
   files: [],
-  milestones: [],            // [{name, taskCount}]
+  milestones: [],            // [{name, taskCount, autoPlanned}]
   selectedMilestones: [],    // array of names
+  totalPlannedOverride: null, // optional single number — overrides total (a) across selected sprints
   projectName: '',
   reportTitle: '',
   pmList: [],
@@ -565,6 +679,304 @@ async function copyText(text){
     }
     showToast('Copied to clipboard');
   } catch(e){ showToast('Copy failed — select & copy manually'); }
+}
+
+/* ============================================================
+   PHASE B HELPERS — burn-down, estimation accuracy, forecast end, data quality
+   ============================================================ */
+// Build a daily burn-down series for a sprint payload.
+// Returns { labels: [yyyy-mm-dd], ideal: [hrs], actual: [hrs], todayIdx, complete }
+function buildBurnDownSeries(D){
+  if(!D.sprintStart || !D.sprintEnd) return null;
+  const a = D.totals.total_planned;
+  if(a <= 0) return null;
+  // Build day series from sprintStart to max(sprintEnd, today)
+  const start = new Date(D.sprintStart); start.setHours(0,0,0,0);
+  const end   = new Date(D.sprintEnd);   end.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const lastDay = today > end ? today : end;
+  const days = Math.max(1, Math.floor((end - start) / 86400000) + 1);
+  const totalDays = Math.max(1, Math.floor((lastDay - start) / 86400000) + 1);
+  const labels = []; const ideal = []; const actual = [];
+  // Bucket completed hours by day
+  const completedByDay = {};
+  D.tasks.forEach(t => {
+    if(!isCompletedStatus(t.status)) return;
+    const cd = t.completion_iso ? new Date(t.completion_iso) : null;
+    if(!cd || isNaN(cd.getTime())) return;
+    cd.setHours(0,0,0,0);
+    const key = cd.toISOString().slice(0,10);
+    completedByDay[key] = (completedByDay[key]||0) + t.planned;
+  });
+  let cumCompleted = 0;
+  let todayIdx = -1;
+  for(let i = 0; i < totalDays; i++){
+    const d = new Date(start.getTime() + i*86400000);
+    const key = d.toISOString().slice(0,10);
+    labels.push(key);
+    // Ideal: linear over (days-1) steps, 0 at end. After end, stays at 0.
+    const idealVal = (days > 1)
+      ? Math.max(0, a * (1 - (i / (days - 1))))
+      : (i === 0 ? a : 0);
+    ideal.push(+idealVal.toFixed(2));
+    if(completedByDay[key]) cumCompleted += completedByDay[key];
+    actual.push(+Math.max(0, a - cumCompleted).toFixed(2));
+    if(d.getTime() === today.getTime()) todayIdx = i;
+  }
+  return { labels, ideal, actual, todayIdx, totalPlanned: a, sprintEndIdx: days - 1, complete: cumCompleted >= a - 0.01 };
+}
+
+// Per-resource estimation accuracy: % of completed tasks where actual within ±20% of planned.
+// Only counts tasks with planned > 0 (excludes recurring/0-plan items).
+function computeEstAccuracy(D, owner, band){
+  band = band || 0.20;
+  let qualifying = 0, accurate = 0;
+  D.tasks.forEach(t => {
+    if(!isCompletedStatus(t.status)) return;
+    if(t.planned <= 0) return;
+    const owners = String(t.owner).split(',').map(s=>s.trim()).filter(Boolean);
+    if(!owners.includes(owner)) return;
+    qualifying++;
+    const ratio = t.actual / t.planned;
+    if(ratio >= 1 - band && ratio <= 1 + band) accurate++;
+  });
+  return qualifying === 0 ? null : { pct: (accurate/qualifying)*100, accurate, qualifying };
+}
+
+// Forecast sprint end date based on remaining work and recent velocity.
+function computeForecastEnd(D){
+  if(!D.sprintStart || !D.sprintEnd) return null;
+  if(D.phase === 'future') return { kind: 'future', msg: 'Sprint not started' };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(D.sprintStart); start.setHours(0,0,0,0);
+  const end   = new Date(D.sprintEnd);   end.setHours(0,0,0,0);
+  if(D.phase === 'past' || today > end){
+    const delta = Math.round((end - today) / 86400000);
+    return { kind: 'past', endDate: end, deltaDays: delta };
+  }
+  // Current sprint — compute velocity
+  const sprintDaysLen = Math.max(1, Math.floor((end - start) / 86400000) + 1);
+  const daysElapsed = Math.max(1, Math.floor((today - start) / 86400000) + 1);
+  // Use last 7 days of completions when sprint is > 10 days in
+  const useRecent = daysElapsed > 10;
+  const windowStart = useRecent ? new Date(today.getTime() - 7*86400000) : start;
+  let windowHours = 0;
+  D.tasks.forEach(t => {
+    if(!isCompletedStatus(t.status)) return;
+    if(!t.completion_iso) return;
+    const cd = new Date(t.completion_iso); cd.setHours(0,0,0,0);
+    if(cd >= windowStart && cd <= today) windowHours += t.actual;
+  });
+  const windowDays = useRecent ? 7 : daysElapsed;
+  // Fallback: if we don't have task-level actuals, use total_actual / daysElapsed
+  if(windowHours <= 0) windowHours = useRecent ? 0 : D.totals.total_actual;
+  const velocity = windowHours / windowDays;     // hours/day
+  const remaining = D.totals.g_tentative_to_finish;
+  if(velocity <= 0) return { kind: 'no-velocity', endDate: end, daysElapsed };
+  if(remaining <= 0) return { kind: 'complete', endDate: end };
+  const daysNeeded = remaining / velocity;
+  const forecast = new Date(today.getTime() + Math.ceil(daysNeeded) * 86400000);
+  const delta = Math.round((forecast - end) / 86400000);
+  return { kind: 'current', forecastDate: forecast, endDate: end, deltaDays: delta, velocity, useRecent };
+}
+
+// Data Quality predicates — distinct from at-risk Watch list (these are hygiene issues, not delivery risks)
+function dqMissingPlan(t)    { return t.planned === 0 && !isCompletedStatus(t.status); }
+function dqMissingOwner(t)   { return !t.owner || /^not assigned$/i.test(t.owner); }
+function dqCompletedNoDate(t){ return isCompletedStatus(t.status) && !t.completion_iso; }
+function dqZeroPlanRealEffort(t){ return t.planned === 0 && t.actual > 0; }
+// Date columns are blank for the whole sheet in current Zoho exports — flag as a single banner, not per task
+
+/* ============================================================
+   PHASE C HELPERS — carryover chains, retro questions, knowledge concentration
+   ============================================================ */
+
+// Walk across all selected payloads and detect tasks that have been re-scoped in ≥ 2 sprints.
+// Returns array of { name, moveCount, chain: [from, to, to, ...], landing, isAlive }
+function buildCarryoverChains(payloads){
+  const strip = (name) => String(name || '').replace(/^\[CLOSED\s*-\s*MOVED to Sprint \d+\]\s*/i, '').trim();
+  const map = {};
+  payloads.forEach((p) => {
+    p.allTasks.forEach(t => {
+      const n = strip(t.name);
+      if(!n) return;
+      if(!map[n]) map[n] = { name: n, moves: [], landing: null, lastSeenInSprint: null };
+      if(t.moved_to){
+        map[n].moves.push({ from: p.short, to: t.moved_to });
+      } else {
+        // First non-moved occurrence is the landing sprint
+        if(!map[n].landing) map[n].landing = { sprint: p.short, status: t.status };
+      }
+      map[n].lastSeenInSprint = p.short;
+    });
+  });
+  return Object.values(map)
+    .filter(c => c.moves.length >= 2)
+    .map(c => {
+      // Build chain string: from1 → to1 → to2 → ... → landing (if exists)
+      // Since to(N-1) usually equals from(N), the chain reads like: Sprint 0 → Sprint 1 → Sprint 2
+      const stops = [c.moves[0].from];
+      c.moves.forEach(m => {
+        const last = stops[stops.length - 1];
+        if(last !== m.to) stops.push(m.to);
+      });
+      return {
+        name: c.name,
+        moveCount: c.moves.length,
+        chain: stops,
+        landing: c.landing,
+        isAlive: !c.landing,
+      };
+    })
+    .sort((a, b) => b.moveCount - a.moveCount || a.name.localeCompare(b.name));
+}
+
+// Generate evidence-based retrospective questions for a single sprint payload.
+// Each item: { severity: 'red'|'amber'|'green', category, question, evidence }
+function generateRetroQuestions(D){
+  const T = D.tasks;
+  const TOT = D.totals;
+  const out = [];
+  // 1. Closed with 0 logged hours
+  const zeroLogged = T.filter(t => isCompletedStatus(t.status) && t.actual === 0 && t.planned > 0);
+  if(zeroLogged.length > 0){
+    out.push({
+      severity: 'amber', category: 'Worklog hygiene',
+      question: `Why did ${zeroLogged.length} task(s) close with zero logged hours?`,
+      evidence: zeroLogged.slice(0, 4).map(t => t.name.replace(/^\[[^\]]+\]\s*-?\s*/, '').slice(0, 60)).join(' · ') + (zeroLogged.length > 4 ? ` · +${zeroLogged.length - 4} more` : ''),
+    });
+  }
+  // 2. Large under-runs (planned ≥ 16h, delivered ≤ 30% of plan)
+  const underRun = T.filter(t => isCompletedStatus(t.status) && t.planned >= 16 && t.actual <= t.planned * 0.3);
+  if(underRun.length > 0){
+    out.push({
+      severity: 'amber', category: 'Estimation',
+      question: `${underRun.length} large task(s) finished with ≤30% of planned effort — were they descoped, or were estimates inflated?`,
+      evidence: underRun.slice(0, 3).map(t => `${t.name.slice(0, 45)} (${t.planned}h plan / ${t.actual.toFixed(1)}h actual)`).join(' · '),
+    });
+  }
+  // 3. Over-runs (actual > 1.5 × planned)
+  const overRun = T.filter(t => isCompletedStatus(t.status) && t.planned > 0 && t.actual > t.planned * 1.5);
+  if(overRun.length > 0){
+    out.push({
+      severity: 'amber', category: 'Estimation',
+      question: `${overRun.length} completed task(s) ran more than 50% over plan. What was unexpected?`,
+      evidence: overRun.slice(0, 3).map(t => `${t.name.slice(0, 45)} (${t.planned}h plan / ${t.actual.toFixed(1)}h actual)`).join(' · '),
+    });
+  }
+  // 4. Single-resource dominance (>50% of total logged)
+  if(D.tracked.length > 1){
+    const totalLogged = D.tracked.reduce((s, o) => s + D.resources[o].actual, 0);
+    if(totalLogged > 0){
+      const sorted = D.tracked.slice().sort((a, b) => D.resources[b].actual - D.resources[a].actual);
+      const top = sorted[0];
+      const share = D.resources[top].actual / totalLogged;
+      if(share > 0.50){
+        out.push({
+          severity: share > 0.70 ? 'red' : 'amber', category: 'Knowledge concentration',
+          question: `${(share*100).toFixed(0)}% of the sprint's logged effort came from ${top}. Should we cross-train or rebalance load?`,
+          evidence: `${top}: ${D.resources[top].actual.toFixed(1)}h of ${totalLogged.toFixed(1)}h sprint total`,
+        });
+      }
+    }
+  }
+  // 5. Re-scoped tasks
+  if(TOT.moved_count > 0){
+    out.push({
+      severity: TOT.moved_count >= 3 ? 'red' : 'amber', category: 'Sprint planning',
+      question: `${TOT.moved_count} task(s) were re-scoped to a future sprint. Were these capacity surprises, or known at planning time?`,
+      evidence: `${TOT.moved_planned.toFixed(0)} planned hrs moved out`,
+    });
+  }
+  // 6. Quality — bug-to-task ratio
+  if(TOT.bug_total > 0 && TOT.delivered > 0){
+    const ratio = TOT.bug_total / TOT.delivered;
+    if(ratio >= 0.25){
+      out.push({
+        severity: ratio >= 0.5 ? 'red' : 'amber', category: 'Quality',
+        question: `${TOT.bug_total} bug(s) were filed against ${TOT.delivered} delivered task(s) — a ${(ratio*100).toFixed(0)}% bug-to-task ratio. Is QA engaged early enough?`,
+        evidence: `${TOT.bug_open} still open, ${TOT.bug_closed} closed`,
+      });
+    }
+  }
+  // 7. Utilization under 60%
+  if(TOT.total_planned > 0 && TOT.hour_pct < 60){
+    out.push({
+      severity: TOT.hour_pct < 40 ? 'red' : 'amber', category: 'Capacity',
+      question: `Only ${TOT.hour_pct.toFixed(0)}% of planned hours were logged. Were we over-staffed, were estimates padded, or is worklog discipline incomplete?`,
+      evidence: `${TOT.total_actual.toFixed(0)}h logged of ${TOT.total_planned.toFixed(0)}h planned`,
+    });
+  }
+  // 8. Utilization over 110%
+  if(TOT.total_planned > 0 && TOT.hour_pct > 110){
+    out.push({
+      severity: 'red', category: 'Capacity',
+      question: `Logged hours exceeded plan by ${(TOT.hour_pct - 100).toFixed(0)}%. Was the team over-stretched, or were estimates too lean?`,
+      evidence: `${TOT.total_actual.toFixed(0)}h logged of ${TOT.total_planned.toFixed(0)}h planned`,
+    });
+  }
+  // 9. At-risk volume
+  const wlCount = T.filter(taskAtRisk).length;
+  if(wlCount >= 5){
+    out.push({
+      severity: 'amber', category: 'Visibility',
+      question: `${wlCount} tasks ended up on the at-risk watch list. Were these visible during the sprint, or only after close?`,
+      evidence: 'See watch list in Section 1 for the breakdown',
+    });
+  }
+  // 10. Stale tasks
+  const stale = T.filter(taskStaleOpen);
+  if(stale.length > 0){
+    out.push({
+      severity: stale.length >= 5 ? 'red' : 'amber', category: 'Cycle time',
+      question: `${stale.length} open task(s) have been alive for more than 14 days. What's blocking them?`,
+      evidence: stale.slice(0, 3).map(t => t.name.slice(0, 50)).join(' · '),
+    });
+  }
+  // 11. Health not green
+  if(D.health === 'AMBER' || D.health === 'RED'){
+    out.push({
+      severity: D.health === 'RED' ? 'red' : 'amber', category: 'Sprint outcome',
+      question: `Sprint closed ${D.health}. Looking back, what was the earliest signal that we could have acted on?`,
+      evidence: `Delivery ${TOT.task_pct.toFixed(0)}% · Utilization ${TOT.hour_pct.toFixed(0)}% · ${TOT.moved_count} re-scoped · ${TOT.bug_open} bugs open`,
+    });
+  }
+  return out;
+}
+
+// Per-workstream (task list) knowledge concentration: what % of logged hours came from the top owner?
+function computeKnowledgeConcentration(D){
+  const byTL = {};
+  D.tasks.forEach(t => {
+    const owners = String(t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
+    const n = owners.length || 1;
+    const tl = t.tasklist || 'Unspecified';
+    if(!byTL[tl]) byTL[tl] = { hours: {}, total: 0 };
+    owners.forEach(o => {
+      if(/^project manager$|^solution architect$/i.test(o)) return; // exclude PM/SA
+      const share = (t.actual || 0) / n;
+      byTL[tl].hours[o] = (byTL[tl].hours[o] || 0) + share;
+      byTL[tl].total += share;
+    });
+  });
+  return Object.entries(byTL)
+    .map(([tl, info]) => {
+      const entries = Object.entries(info.hours).sort((a, b) => b[1] - a[1]);
+      if(entries.length === 0 || info.total <= 0) return null;
+      const top = entries[0];
+      return {
+        tasklist: tl,
+        totalHours: info.total,
+        topOwner: top[0],
+        topHours: top[1],
+        topShare: (top[1] / info.total) * 100,
+        contributors: entries.length,
+        otherContributors: entries.slice(1).map(e => e[0]),
+      };
+    })
+    .filter(Boolean)
+    .filter(r => r.totalHours > 0)
+    .sort((a, b) => b.topShare - a.topShare || a.tasklist.localeCompare(b.tasklist));
 }
 
 // Watch-list category predicates — return true when a task matches a "needs attention" pattern
@@ -753,9 +1165,17 @@ function rebuildSprintList(){
   const taskFiles = state.files.filter(f => f.type === 'task' && f.rows);
   const milestoneFiles = state.files.filter(f => f.type === 'milestone' && f.rows);
   const counts = {};
+  const autoPlanned = {}; // sprintName → sum of Work hours over in-scope tasks
   let projects = new Set();
   taskFiles.forEach(f => f.rows.forEach(r => {
-    const ms = r['Milestone Name']; if(ms){ counts[ms] = (counts[ms]||0)+1; }
+    const ms = r['Milestone Name']; if(ms){
+      counts[ms] = (counts[ms]||0)+1;
+      // Compute auto-planned excluding CLOSED – MOVED tasks
+      const tn = String(r['Task Name'] || '');
+      if(!/^\[CLOSED\s*-\s*MOVED to Sprint \d+\]/i.test(tn)){
+        autoPlanned[ms] = (autoPlanned[ms]||0) + hmToHours(r['Work hours']);
+      }
+    }
     const pn = r['Project Name']; if(pn) projects.add(pn);
   }));
 
@@ -793,6 +1213,7 @@ function rebuildSprintList(){
 
   state.milestones = Object.entries(counts).map(([name, count]) => ({
     name, count,
+    autoPlanned: +(autoPlanned[name] || 0).toFixed(2),
     meta: milestoneMeta[name] || null,
   })).sort((a,b) => a.name.localeCompare(b.name));
   // Preserve previous selections that still exist
@@ -822,11 +1243,11 @@ function rebuildSprintList(){
         <input type="checkbox" ${checked ? 'checked' : ''}>
         <span class="ms-name">${escapeHtml(m.name)}</span>
         ${metaBadge}
-        <span class="ms-meta">${m.count} task(s)</span>
+        <span class="ms-meta">${m.count} task(s) · auto plan ${m.autoPlanned.toFixed(1)}h</span>
       </label>`;
     }).join('');
     list.querySelectorAll('label').forEach(lbl => {
-      const cb = lbl.querySelector('input');
+      const cb = lbl.querySelector('input[type=checkbox]');
       lbl.addEventListener('click', e => {
         // toggle on label click except when clicking the checkbox itself (default behaviour)
         if(e.target !== cb) cb.checked = !cb.checked;
@@ -836,9 +1257,12 @@ function rebuildSprintList(){
         lbl.classList.toggle('checked', cb.checked);
         updateMsCount();
         updateReady();
+        // Refresh the auto-total hint shown in the Reporting Policy section, if present
+        refreshPlanAutoHint();
       });
     });
   }
+  refreshPlanAutoHint();
   updateMsCount();
   // project autofill
   const pn = document.getElementById('projectName');
@@ -865,11 +1289,36 @@ document.getElementById('pmList').addEventListener('input', e => state.pmList = 
 document.getElementById('saList').addEventListener('input', e => state.saList = e.target.value.split(',').map(s=>s.trim()).filter(Boolean));
 document.getElementById('movedHandling').addEventListener('change', e => state.movedHandling = e.target.value);
 document.getElementById('bugTimingRule').addEventListener('change', e => state.bugTimingRule = e.target.value);
+document.getElementById('totalPlannedOverride').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  if(v === ''){ state.totalPlannedOverride = null; }
+  else {
+    const n = parseFloat(v);
+    state.totalPlannedOverride = (!isNaN(n) && n >= 0) ? n : null;
+  }
+  refreshPlanAutoHint();
+});
+
+// Updates the "auto-calculated from task Work hours" hint shown next to the override input.
+// Sums the auto-planned across the currently selected sprints so the user knows what the auto value would be.
+function refreshPlanAutoHint(){
+  const hint = document.getElementById('planAutoHint');
+  if(!hint || !state.milestones) return;
+  const selected = state.milestones.filter(m => state.selectedMilestones.includes(m.name));
+  if(selected.length === 0){
+    hint.textContent = 'auto-calculated from task "Work hours" once sprints are selected';
+    return;
+  }
+  const sum = selected.reduce((a,m) => a + (m.autoPlanned||0), 0);
+  hint.innerHTML = `auto-calculated: <strong>${sum.toFixed(1)} hrs</strong> across ${selected.length} sprint${selected.length === 1 ? '' : 's'}`;
+}
 
 document.getElementById('resetBtn').addEventListener('click', () => {
   state.files = []; state.milestones = []; state.selectedMilestones = [];
+  state.totalPlannedOverride = null;
   document.getElementById('projectName').value = '';
   document.getElementById('reportTitle').value = '';
+  document.getElementById('totalPlannedOverride').value = '';
   rebuildFileList(); rebuildSprintList(); updateReady();
 });
 
@@ -972,7 +1421,10 @@ function buildSprintPayload(sprintName, taskRows, bugRows){
 
   const movedTasks = tasks.filter(t => t.moved_to);
   const inScope = state.movedHandling === 'rescope' ? tasks.filter(t => !t.moved_to) : tasks;
-  const totalPlanned = inScope.reduce((a,t)=>a+t.planned, 0);
+  // Per-sprint planned is always auto-computed; the single total override (if set)
+  // is applied at the aggregate / single-sprint render layer, not here.
+  const autoPlanned = inScope.reduce((a,t)=>a+t.planned, 0);
+  const totalPlanned = autoPlanned;
   const totalActual = inScope.reduce((a,t)=>a+t.actual, 0);
   const movedPlanned = movedTasks.reduce((a,t)=>a+t.planned, 0);
   const movedActual = movedTasks.reduce((a,t)=>a+t.actual, 0);
@@ -1101,6 +1553,7 @@ function buildSprintPayload(sprintName, taskRows, bugRows){
     sprintEndLabel: sprintEnd ? sprintEnd.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) : 'Not Available in Excel',
     health, isFuture, phase,
     milestoneStatus, milestoneOwner,
+    autoPlanned,
     tasks: inScope, allTasks: tasks, movedTasks,
     bugs, bugsOutside,
     totals: {
@@ -1143,6 +1596,52 @@ function generateReport(){
 
 function newReportLink(){
   return `<a href="#" id="backLink" style="margin-left:auto">&larr; New report</a>`;
+}
+
+// Inject a collapse caret into every section's h2 and restore state from localStorage.
+function wireCollapsibleSections(){
+  const sections = document.querySelectorAll('#reportBody section');
+  sections.forEach(sec => {
+    const h2 = sec.querySelector('h2');
+    if(!h2 || h2.querySelector('.sec-toggle')) return;
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'sec-toggle';
+    toggle.title = 'Collapse / expand this section';
+    toggle.textContent = '▾';
+    h2.insertBefore(toggle, h2.firstChild);
+    // Restore state
+    const key = 'srgen.collapsed:' + sec.id;
+    if(localStorage.getItem(key) === '1') sec.classList.add('collapsed');
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sec.classList.toggle('collapsed');
+      if(sec.classList.contains('collapsed')) localStorage.setItem(key, '1');
+      else localStorage.removeItem(key);
+    });
+  });
+}
+
+// Inject Collapse-all / Expand-all master button into the view-tabs right side
+function wireCollapseAllButton(){
+  const right = document.querySelector('.view-tabs .right');
+  if(!right || document.getElementById('btnCollapseAll')) return;
+  const btn = document.createElement('button');
+  btn.id = 'btnCollapseAll';
+  btn.type = 'button';
+  btn.className = 'btn-collapse';
+  btn.textContent = 'Collapse all';
+  right.insertBefore(btn, right.firstChild);
+  btn.addEventListener('click', () => {
+    const sections = document.querySelectorAll('#reportBody section');
+    const anyExpanded = [...sections].some(s => !s.classList.contains('collapsed'));
+    sections.forEach(sec => {
+      const key = 'srgen.collapsed:' + sec.id;
+      if(anyExpanded){ sec.classList.add('collapsed'); localStorage.setItem(key, '1'); }
+      else { sec.classList.remove('collapsed'); localStorage.removeItem(key); }
+    });
+    btn.textContent = anyExpanded ? 'Expand all' : 'Collapse all';
+  });
 }
 function attachBackLink(){
   const a = document.getElementById('backLink');
@@ -1192,6 +1691,8 @@ function renderSingle(D){
   const body = document.getElementById('reportBody');
   body.innerHTML = renderSprintSections(D, '', true);
   populateSprintSections(D, '');
+  wireCollapsibleSections();
+  wireCollapseAllButton();
   attachBackLink();
 }
 
@@ -1224,20 +1725,63 @@ function renderSprintSections(D, idPrefix, includeAnchors){
       ${TOT.bugs_outside_count > 0 ? `<div class="alertbox"><strong>Bug timing note:</strong> ${TOT.bugs_outside_count} bug(s) fall outside this sprint's window and are excluded from this section.</div>` : ''}
       <h3 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Delivery health</h3>
       <div class="kpis">
-        <div class="kpi ${healthClass}" title="Sprint Health rule:\nGREEN = 100% task completion and no open in-progress.\nAMBER = below 100% or any in-progress.\nRED = below 80% completion."><div class="l">Sprint Health</div><div class="v">${D.health}</div></div>
+        <div class="kpi ${healthClass}" title="Sprint Health rule:&#10;GREEN = 100% task completion and no open in-progress.&#10;AMBER = below 100% or any in-progress.&#10;RED = below 80% completion."><div class="l">Sprint Health</div><div class="v">${D.health}</div></div>
         <div class="kpi ${TOT.task_pct >= 100 ? 'green' : TOT.task_pct >= 80 ? 'amber' : 'red'}" title="Task Completion = delivered ÷ total in-scope tasks. ${TOT.delivered} of ${TOT.total_tasks} delivered."><div class="l">Task Completion</div><div class="v">${TOT.task_pct.toFixed(1)}%</div><div class="d">${TOT.delivered} of ${TOT.total_tasks} delivered</div></div>
         <div class="kpi ${TOT.hour_pct >= 80 ? 'green' : TOT.hour_pct >= 50 ? 'amber' : 'red'}" title="Effort Utilization = logged ÷ planned hours. ${TOT.total_actual.toFixed(2)} / ${TOT.total_planned.toFixed(2)}."><div class="l">Effort Utilization</div><div class="v">${TOT.hour_pct.toFixed(1)}%</div></div>
         <div class="kpi" title="Count of CLOSED – MOVED tasks (re-scoped to a future sprint per process). Excluded from in-scope KPIs."><div class="l">Re-scoped Tasks</div><div class="v num">${TOT.moved_count}</div></div>
+        ${(() => {
+          const fc = computeForecastEnd(D);
+          if(!fc) return '';
+          if(fc.kind === 'future') return '';
+          if(fc.kind === 'past'){
+            const fin = fc.endDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+            const sub = fc.deltaDays === 0 ? 'ended today' : (fc.deltaDays < 0 ? Math.abs(fc.deltaDays) + ' day(s) ago' : 'ends in ' + fc.deltaDays + ' day(s)');
+            return `<div class="kpi" title="Sprint phase: past — this is the recorded end date, not a forecast."><div class="l">Sprint Ended</div><div class="v num">${fin}</div><div class="d">${sub}</div></div>`;
+          }
+          if(fc.kind === 'no-velocity' || fc.kind === 'complete'){
+            const lbl = fc.kind === 'complete' ? 'On track to finish' : 'Forecast unavailable';
+            const sub = fc.kind === 'complete' ? 'All open work closed' : 'Need ≥ 8 hrs logged to forecast';
+            return `<div class="kpi" title="Forecast end-date requires task-completion data plus logged hours."><div class="l">Forecast End</div><div class="v" style="font-size:14px;color:var(--muted)">${lbl}</div><div class="d">${sub}</div></div>`;
+          }
+          // current sprint — show forecast
+          const fcDate = fc.forecastDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+          const deltaCls = fc.deltaDays <= 0 ? 'ahead' : (fc.deltaDays <= 3 ? 'late-mild' : 'late-bad');
+          const deltaTxt = fc.deltaDays === 0 ? 'on time' : (fc.deltaDays < 0 ? `${Math.abs(fc.deltaDays)} day(s) ahead` : `${fc.deltaDays} day(s) late`);
+          const kpiCls = fc.deltaDays <= 0 ? 'green' : (fc.deltaDays <= 3 ? 'amber' : 'red');
+          const velocityNote = fc.useRecent ? 'velocity from last 7 days' : 'velocity from sprint-to-date';
+          return `<div class="kpi ${kpiCls}" title="Forecast = today + (remaining work ÷ velocity). Velocity = hours logged ÷ days, using ${velocityNote}. Planned end: ${fc.endDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}. Velocity: ${fc.velocity.toFixed(2)} hrs/day."><div class="l">Forecast End</div><div class="v num">${fcDate}</div><div class="forecast-delta ${deltaCls}">${deltaTxt}</div></div>`;
+        })()}
         ${TOT.bug_total > 0 ? `<div class="kpi ${TOT.bug_open > 0 ? 'red' : 'green'}" title="Bugs filed within the sprint window. T = total, O = open, C = closed."><div class="l">Open Bugs</div><div class="v num">${TOT.bug_open}</div><div class="d">${TOT.bug_total} total / ${TOT.bug_closed} closed</div></div>` : `<div class="kpi green" title="No bugs were filed within the sprint window."><div class="l">Bugs in Sprint</div><div class="v num">0</div></div>`}
       </div>
       <h3 style="margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Effort & burn-down</h3>
       <div class="kpis">
-        <div class="kpi blue" title="(a) = sum of &quot;Work hours&quot; (planned) over all in-scope tasks in this sprint."><div class="l">(a) Planned hours</div><div class="v num">${TOT.total_planned.toFixed(1)}</div><div class="d">Sum of planned hours in this sprint</div></div>
+        ${(() => {
+          // Single-sprint view: if a total override is set, it replaces (a) here.
+          const ovr = state.totalPlannedOverride;
+          const hasOverride = (ovr !== null && ovr !== undefined && !isNaN(ovr));
+          const displayed = hasOverride ? +ovr : TOT.total_planned;
+          const title = hasOverride
+            ? `(a) = manual override = ${displayed.toFixed(1)} hrs (auto would be ${D.autoPlanned.toFixed(1)} from sum of Work hours).`
+            : '(a) = sum of "Work hours" (planned) over all in-scope tasks in this sprint.';
+          return `<div class="kpi blue" title="${escapeHtml(title)}">
+            ${hasOverride ? '<span class="kpi-override-mark" title="Manually overridden">✎</span>' : ''}
+            <div class="l">(a) Planned hours${hasOverride ? ' <span style="color:var(--amber);font-size:9px">(override)</span>' : ''}</div>
+            <div class="v num">${displayed.toFixed(1)}</div>
+            <div class="d">${hasOverride ? `Manual · auto would be ${D.autoPlanned.toFixed(1)}` : 'Sum of planned hours in this sprint'}</div>
+          </div>`;
+        })()}
         <div class="kpi blue" title="(b) = sum of &quot;Total Log Hours&quot; over all in-scope tasks. Real effort to date."><div class="l">(b) Logged hours</div><div class="v num">${TOT.total_actual.toFixed(2)}</div><div class="d">Actual to date</div></div>
         <div class="kpi green" title="(c) = sum of &quot;Work hours&quot; over tasks whose Custom Status indicates completion (Done, Closed, Dev Done, PR Done, Completed, Resolved)."><div class="l">(c) Planned of completed</div><div class="v num">${TOT.c_planned_completed.toFixed(1)}</div><div class="d">Planned hours of completed tasks</div></div>
-        <div class="kpi green" title="(d) ≡ (b). Total logged hours, framed as &quot;time taken so far&quot;."><div class="l">(d) Time taken so far</div><div class="v num">${TOT.total_actual.toFixed(2)}</div><div class="d">Total logged hours</div></div>
-        <div class="kpi ${TOT.e_remaining_onhand >= 0 ? '' : 'red'}" title="(e) = (a) − (b). Plan budget left if every remaining task hits its plan exactly."><div class="l">(e) Hours on hand</div><div class="v num">${TOT.e_remaining_onhand.toFixed(2)}</div><div class="d">a − b</div></div>
-        <div class="kpi" title="(f) = (a) − (c). Planned budget reserved for tasks that have NOT been completed yet."><div class="l">(f) Planned hours remaining</div><div class="v num">${TOT.f_planned_remaining.toFixed(1)}</div><div class="d">a − c</div></div>
+        <div class="kpi green" title="(d) = sum of &quot;Total Log Hours&quot; over tasks whose Custom Status indicates completion. The real effort spent on what has been delivered. Compare against (c) — if (d) > (c), completed work over-ran its plan."><div class="l">(d) Actual time taken till date</div><div class="v num">${TOT.d_actual_completed.toFixed(2)}</div><div class="d">Actual hours on completed tasks</div></div>
+        ${(() => {
+          // (e) and (f) derive from (a). When a total override is set, recompute against the override.
+          const ovr = state.totalPlannedOverride;
+          const effectiveA = (ovr !== null && ovr !== undefined && !isNaN(ovr)) ? +ovr : TOT.total_planned;
+          const e = effectiveA - TOT.total_actual;
+          const f = effectiveA - TOT.c_planned_completed;
+          return `<div class="kpi ${e >= 0 ? '' : 'red'}" title="(e) = (a) − (b). Plan budget left if every remaining task hits its plan exactly."><div class="l">(e) Hours on hand</div><div class="v num">${e.toFixed(2)}</div><div class="d">a − b</div></div>
+        <div class="kpi" title="(f) = (a) − (c). Planned budget reserved for tasks that have NOT been completed yet."><div class="l">(f) Planned hours remaining</div><div class="v num">${f.toFixed(1)}</div><div class="d">a − c</div></div>`;
+        })()}
         <div class="kpi amber" title="(g) = Σ max(0, planned − actual) over open tasks. Best-estimate effort still needed to close them; tasks already over-running contribute 0."><div class="l">(g) Tentative time to finish</div><div class="v num">${TOT.g_tentative_to_finish.toFixed(1)}</div><div class="d">Σ max(0, planned − actual) on open tasks</div></div>
       </div>
       ${(wlTotal > 0) ? `
@@ -1251,15 +1795,52 @@ function renderSprintSections(D, idPrefix, includeAnchors){
         </div>
       </div>
       ` : `<div class="watchlist clean"><h3><span class="wl-icon">✓</span> Watch list</h3><div class="wl-empty">No at-risk tasks detected — sprint is hygienically clean. 🎉</div></div>`}
+      ${(() => {
+        const dq = {
+          missingPlan:    D.tasks.filter(dqMissingPlan),
+          missingOwner:   D.tasks.filter(dqMissingOwner),
+          completedNoDate:D.tasks.filter(dqCompletedNoDate),
+          zeroPlanReal:   D.tasks.filter(dqZeroPlanRealEffort),
+        };
+        const allDateBlank = D.tasks.length > 0 && D.tasks.every(t => !t.start_date && !t.due_date);
+        const sprintWindowMissing = !D.sprintStart || !D.sprintEnd;
+        const dqTotal = dq.missingPlan.length + dq.missingOwner.length + dq.completedNoDate.length + dq.zeroPlanReal.length;
+        if(dqTotal === 0 && !allDateBlank && !sprintWindowMissing){
+          return `<div class="data-quality clean"><h3><span class="dq-icon">✓</span> Data Quality</h3><div class="dq-empty">All checks passed — Zoho hygiene is solid for this sprint. 🎉</div></div>`;
+        }
+        let banners = '';
+        if(allDateBlank) banners += `<div class="dq-banner"><strong>100% of tasks have empty Start/Due Date columns in this Zoho export.</strong> Enable these fields at task creation to unlock schedule-variance analytics.</div>`;
+        if(sprintWindowMissing) banners += `<div class="dq-banner"><strong>Sprint window dates missing.</strong> Milestone Start/End not set in either the milestone export or the task records — required for the burn-down chart and forecast end date.</div>`;
+        return `<div class="data-quality">
+          <h3><span class="dq-icon">i</span> Data Quality — Zoho hygiene checks <span style="font-weight:400;color:#1e3a8a;font-size:11px;margin-left:6px">click a tile to filter the task table to those rows</span></h3>
+          ${banners}
+          ${dqTotal === 0 ? `<div class="dq-empty">No per-task hygiene issues detected.</div>` : `<div class="dq-items">
+            ${dq.missingPlan.length ? `<button type="button" class="dq-item" data-dq="missingPlan"><div class="dq-cnt">${dq.missingPlan.length}</div><div class="dq-label">Missing planned hours</div></button>` : ''}
+            ${dq.missingOwner.length ? `<button type="button" class="dq-item" data-dq="missingOwner"><div class="dq-cnt">${dq.missingOwner.length}</div><div class="dq-label">Missing owner</div></button>` : ''}
+            ${dq.completedNoDate.length ? `<button type="button" class="dq-item" data-dq="completedNoDate"><div class="dq-cnt">${dq.completedNoDate.length}</div><div class="dq-label">Completed without completion date</div></button>` : ''}
+            ${dq.zeroPlanReal.length ? `<button type="button" class="dq-item" data-dq="zeroPlanReal"><div class="dq-cnt">${dq.zeroPlanReal.length}</div><div class="dq-label">0-planned but real effort logged</div></button>` : ''}
+          </div>`}
+        </div>`;
+      })()}
       <div class="narrative" style="margin-top:18px">
         <p><strong>Verdict:</strong> Sprint closed <strong>${D.health}</strong>. ${TOT.task_pct >= 100 ? 'All in-scope tasks delivered within the sprint window.' : TOT.delivered + ' of ' + TOT.total_tasks + ' in-scope tasks delivered.'} ${TOT.moved_count > 0 ? TOT.moved_count + ' task(s) re-scoped as planned scope adjustment.' : ''}</p>
-        <p><strong>Effort:</strong> Logged ${TOT.total_actual.toFixed(2)} hrs against ${TOT.total_planned.toFixed(2)} planned (${TOT.hour_pct.toFixed(1)}% utilization). Completed tasks budget was ${TOT.c_planned_completed.toFixed(1)} planned hrs; ${(TOT.total_planned - TOT.c_planned_completed).toFixed(1)} planned hrs remain for open work. ${TOT.g_tentative_to_finish > 0 ? 'Remaining open tasks are estimated to need approximately ' + TOT.g_tentative_to_finish.toFixed(1) + ' more hours to close.' : 'No open tasks pending closure.'} ${TOT.bug_total === 0 ? 'No bugs filed within sprint window.' : `${TOT.bug_total} bug(s) raised, ${TOT.bug_closed} closed.`}</p>
+        <p><strong>Effort:</strong> Logged ${TOT.total_actual.toFixed(2)} hrs against ${TOT.total_planned.toFixed(2)} planned (${TOT.hour_pct.toFixed(1)}% utilization). Completed work consumed ${TOT.d_actual_completed.toFixed(2)} actual hrs against ${TOT.c_planned_completed.toFixed(1)} planned for those tasks${TOT.c_planned_completed > 0 ? ` (${((TOT.d_actual_completed/TOT.c_planned_completed)*100).toFixed(0)}% of plan)` : ''}. ${(TOT.total_planned - TOT.c_planned_completed).toFixed(1)} planned hrs remain for open work. ${TOT.g_tentative_to_finish > 0 ? 'Remaining open tasks are estimated to need approximately ' + TOT.g_tentative_to_finish.toFixed(1) + ' more hours to close.' : 'No open tasks pending closure.'} ${TOT.bug_total === 0 ? 'No bugs filed within sprint window.' : `${TOT.bug_total} bug(s) raised, ${TOT.bug_closed} closed.`}</p>
       </div>
     </section>
 
     <section ${a('dashboard')}>
       <h2>2. Sprint Dashboard Summary</h2>
-      <div class="lede">Visual snapshot of plan vs delivery, status mix, and module split.</div>
+      <div class="lede">Visual snapshot of plan vs delivery, burn-down trend, status mix, and module split.</div>
+      ${(D.sprintStart && D.sprintEnd && TOT.total_planned > 0 && D.phase !== 'future') ? `
+      <div class="burndown-block">
+        <h3>Burn-down — remaining planned hours by day</h3>
+        <div class="legend"><span class="ideal">Ideal</span><span class="actual">Actual</span><span class="today">Today</span></div>
+        <div class="chartwrap"><canvas id="${cId('cBurnDown')}"></canvas></div>
+      </div>` : (D.phase === 'future' ? `
+      <div class="burndown-block">
+        <h3>Burn-down — remaining planned hours by day</h3>
+        <div class="burndown-empty">Sprint hasn't started yet — burn-down will appear once work begins.</div>
+      </div>` : '')}
       <div class="grid-2">
         <div><div style="font-weight:500;margin-bottom:6px">Task status distribution</div><div class="chartwrap"><canvas id="${cId('cStatus')}"></canvas></div></div>
         <div><div style="font-weight:500;margin-bottom:6px">Effort by task list</div><div class="chartwrap"><canvas id="${cId('cTaskList')}"></canvas></div></div>
@@ -1355,10 +1936,21 @@ function renderSprintSections(D, idPrefix, includeAnchors){
         <table><thead><tr>
           <th>Resource</th><th>Tasks</th><th>Done/Closed</th>
           <th>Planned</th><th>Actual</th><th>Util %</th><th>Eff %</th>
+          <th title="% of completed tasks where actual was within ±20% of planned. Excludes tasks with 0 planned hours.">Est. Accuracy</th>
           ${TOT.bug_total > 0 ? '<th>Bugs (A/R/P)</th><th>Bugs Reported</th>' : ''}
         </tr></thead><tbody id="${cId('tbRes')}"></tbody></table>
       </div>
-      <div class="footnote">Util % = resource actual &divide; sprint actual hours. Eff % = resource actual &divide; resource planned hours.</div>
+      <div class="footnote">Util % = resource actual &divide; sprint actual hours. Eff % = resource actual &divide; resource planned hours. Est. Accuracy = % of completed tasks within ±20% of planned hours (tasks with 0 planned excluded).</div>
+
+      <div class="kc-block">
+        <h3>Knowledge concentration by workstream</h3>
+        <div class="kc-tip">Top contributor's share of logged hours per workstream. Anything above 75% is a single-point-of-knowledge risk — plan cross-training.</div>
+        <div class="tablewrap">
+          <table><thead><tr>
+            <th>Workstream</th><th>Top contributor</th><th>Top share</th><th>Hours logged</th><th>Contributors</th><th>Risk</th>
+          </tr></thead><tbody id="${cId('tbKC')}"></tbody></table>
+        </div>
+      </div>
     </section>
 
     <section ${a('hero')}>
@@ -1370,6 +1962,14 @@ function renderSprintSections(D, idPrefix, includeAnchors){
     <section ${a('risks')}>
       <h2>7. Risks, Blockers &amp; Dependencies</h2>
       <div class="tablewrap"><table><thead><tr><th>Category</th><th>Detail</th></tr></thead><tbody id="${cId('tbRisk')}"></tbody></table></div>
+      <div class="retro-panel" id="${cId('retroBlock')}">
+        <h3>
+          <span class="retro-icon">?</span> Retrospective discussion prompts
+          <span class="retro-actions"><button type="button" class="btn-action" id="${cId('btnCopyRetro')}" title="Copy these questions to the clipboard">⧉ Copy questions</button></span>
+        </h3>
+        <div class="footnote" style="margin:0 0 6px">Auto-generated from data anomalies. Each question is paired with the evidence that triggered it — drop them straight into your retro agenda.</div>
+        <ol id="${cId('retroList')}"></ol>
+      </div>
     </section>
 
     <section ${a('next')}>
@@ -1420,6 +2020,13 @@ function populateSprintSections(D, idPrefix){
   ];
   if(D.milestoneStatus){ dashRows.push(['Milestone Status (from Zoho)', escapeHtml(D.milestoneStatus) + ` <span class="mute" style="font-size:11px">(phase: ${D.phase})</span>`]); }
   if(D.milestoneOwner){ dashRows.push(['Milestone Owner', escapeHtml(D.milestoneOwner)]); }
+  // Planned hours source — reflects the single global override from the Reporting Policy section
+  const ovrDash = state.totalPlannedOverride;
+  if(ovrDash !== null && ovrDash !== undefined && !isNaN(ovrDash)){
+    dashRows.push(['Planned hours source', `<span class="badge b-amber">Manual override</span> &nbsp; ${(+ovrDash).toFixed(1)} hrs · auto would be ${D.autoPlanned.toFixed(1)} hrs`]);
+  } else {
+    dashRows.push(['Planned hours source', `Auto-calculated from task &quot;Work hours&quot; column (${D.autoPlanned.toFixed(1)} hrs)`]);
+  }
   dashRows.push(
     ['Total Tasks (in scope)', String(TOT.total_tasks)],
     ['Tasks Done', String(TOT.done)],
@@ -1452,12 +2059,21 @@ function populateSprintSections(D, idPrefix){
     const eff = s.planned > 0 ? (s.actual/s.planned)*100 : 0;
     const util = TOT.total_actual > 0 ? (s.actual/TOT.total_actual)*100 : 0;
     const utilCls = util > 30 ? 'green' : (util > 10 ? 'amber' : 'red');
+    const acc = computeEstAccuracy(D, o);
+    let accCell;
+    if(!acc){
+      accCell = `<td class="num mute" title="No completed tasks with planned hours for this resource yet.">N/A</td>`;
+    } else {
+      const accCls = acc.pct >= 70 ? 'b-green' : (acc.pct >= 40 ? 'b-amber' : 'b-red');
+      accCell = `<td><span class="badge ${accCls}" title="${acc.accurate} of ${acc.qualifying} completed tasks within ±20% of plan.">${acc.pct.toFixed(0)}%</span></td>`;
+    }
     return `<tr>
       <td><strong>${escapeHtml(o)}</strong></td>
       <td class="num">${s.tasks}</td><td class="num">${s.done}</td>
       <td class="num">${s.planned.toFixed(1)}</td><td class="num">${s.actual.toFixed(2)}</td>
       <td><span class="badge b-${utilCls}">${util.toFixed(1)}%</span></td>
       <td class="num">${eff.toFixed(1)}%</td>
+      ${accCell}
       ${TOT.bug_total > 0 ? `<td class="num">${s.bugA} / ${s.bugR} / ${s.bugP}</td><td class="num">${s.bugRep}</td>` : ''}
     </tr>`;
   }).join('');
@@ -1504,6 +2120,58 @@ function populateSprintSections(D, idPrefix){
     }).join('');
   }
 
+  // Knowledge concentration table
+  if($('tbKC')){
+    const kc = computeKnowledgeConcentration(D);
+    if(kc.length === 0){
+      $('tbKC').innerHTML = `<tr><td colspan="6" class="empty" style="padding:18px;text-align:center;color:var(--muted)">No workstream data — no tasks have logged hours yet.</td></tr>`;
+    } else {
+      $('tbKC').innerHTML = kc.map(r => {
+        const cls = r.topShare >= 75 ? 'red' : (r.topShare >= 50 ? 'amber' : 'green');
+        const riskBadge = r.topShare >= 75
+          ? '<span class="badge b-red">High concentration</span>'
+          : r.topShare >= 50
+            ? '<span class="badge b-amber">Moderate</span>'
+            : '<span class="badge b-green">Balanced</span>';
+        return `<tr>
+          <td><strong>${escapeHtml(r.tasklist)}</strong></td>
+          <td>${escapeHtml(r.topOwner)}</td>
+          <td><span class="kc-bar ${cls}"><span style="width:${Math.min(100, r.topShare).toFixed(1)}%"></span></span>${r.topShare.toFixed(0)}%</td>
+          <td class="num">${r.topHours.toFixed(1)} / ${r.totalHours.toFixed(1)}</td>
+          <td class="num">${r.contributors}</td>
+          <td>${riskBadge}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // Retrospective discussion prompts
+  if($('retroList')){
+    const qs = generateRetroQuestions(D);
+    const block = $('retroBlock');
+    if(qs.length === 0){
+      $('retroList').innerHTML = '';
+      block.querySelector('h3').innerHTML = '<span class="retro-icon">✓</span> Retrospective discussion prompts <span class="retro-actions"><button type="button" class="btn-action" disabled>Copy questions</button></span>';
+      block.insertAdjacentHTML('beforeend', '<div class="retro-empty" id="' + px + 'retroEmpty">Clean sprint — no anomalies triggered any auto-prompts. 🎉 Use the standard retro agenda.</div>');
+    } else {
+      $('retroList').innerHTML = qs.map(q => `<li>
+        <span class="retro-cat ${q.severity}">${escapeHtml(q.category)}</span><span class="retro-q">${escapeHtml(q.question)}</span>
+        ${q.evidence ? `<div class="retro-ev">Evidence: ${escapeHtml(q.evidence)}</div>` : ''}
+      </li>`).join('');
+    }
+    // Wire copy button
+    const copyBtn = $('btnCopyRetro');
+    if(copyBtn){
+      copyBtn.addEventListener('click', () => {
+        if(qs.length === 0){ showToast('No questions to copy'); return; }
+        const text = `Retrospective discussion prompts — ${D.sprintName}\n` +
+          `Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}\n\n` +
+          qs.map((q, i) => `${i+1}. [${q.category}] ${q.question}\n   Evidence: ${q.evidence}`).join('\n\n');
+        copyText(text);
+      });
+    }
+  }
+
   // Copy Executive Summary as plain text
   const copyBtn = $('btnCopySummary');
   if(copyBtn){
@@ -1521,12 +2189,14 @@ function populateSprintSections(D, idPrefix){
       if(TOT.bug_total > 0) lines.push('  Bugs: ' + TOT.bug_total + ' total / ' + TOT.bug_open + ' open / ' + TOT.bug_closed + ' closed');
       lines.push('');
       lines.push('Effort & burn-down:');
-      lines.push('  (a) Planned hours: ' + TOT.total_planned.toFixed(1));
+      const ovrCopy = state.totalPlannedOverride;
+      const effA = (ovrCopy !== null && ovrCopy !== undefined && !isNaN(ovrCopy)) ? +ovrCopy : TOT.total_planned;
+      lines.push('  (a) Planned hours: ' + effA.toFixed(1) + (ovrCopy != null ? ' (manual override)' : ''));
       lines.push('  (b) Logged hours: ' + TOT.total_actual.toFixed(2));
       lines.push('  (c) Planned of completed: ' + TOT.c_planned_completed.toFixed(1));
-      lines.push('  (d) Time taken so far: ' + TOT.total_actual.toFixed(2));
-      lines.push('  (e) Hours on hand (a−b): ' + TOT.e_remaining_onhand.toFixed(2));
-      lines.push('  (f) Planned hours remaining (a−c): ' + TOT.f_planned_remaining.toFixed(1));
+      lines.push('  (d) Actual time taken till date: ' + TOT.d_actual_completed.toFixed(2));
+      lines.push('  (e) Hours on hand (a−b): ' + (effA - TOT.total_actual).toFixed(2));
+      lines.push('  (f) Planned hours remaining (a−c): ' + (effA - TOT.c_planned_completed).toFixed(1));
       lines.push('  (g) Tentative time to finish: ' + TOT.g_tentative_to_finish.toFixed(1));
       // Watch list summary
       const wlOver = D.tasks.filter(taskOverPlan).length;
@@ -1583,6 +2253,11 @@ function setupTaskFilters(D, px){
     wlClosedZero: t => taskClosedZero(t),
     wlStaleOpen: t => taskStaleOpen(t),
     wlHighPlanLowLog: t => taskHighPlanLowLog(t),
+    // Data Quality predicates
+    dqMissingPlan: t => dqMissingPlan(t),
+    dqMissingOwner: t => dqMissingOwner(t),
+    dqCompletedNoDate: t => dqCompletedNoDate(t),
+    dqZeroPlanReal: t => dqZeroPlanRealEffort(t),
   };
   let activeQuick = 'all';
 
@@ -1724,6 +2399,27 @@ function setupTaskFilters(D, px){
     });
   });
 
+  // Wire up Data-Quality tiles in Section 1 → filter to that DQ category
+  document.querySelectorAll('.data-quality .dq-item').forEach(tile => {
+    const section = tile.closest('section'); if(!section) return;
+    const inThisSprint = (px === '' && section.id === 'exec') || (px !== '' && section.id === px + 'exec');
+    if(!inThisSprint) return;
+    tile.addEventListener('click', () => {
+      const kind = tile.dataset.dq;
+      const qfKey = ({ missingPlan:'dqMissingPlan', missingOwner:'dqMissingOwner', completedNoDate:'dqCompletedNoDate', zeroPlanReal:'dqZeroPlanReal' })[kind];
+      if(!qfKey) return;
+      activeQuick = qfKey;
+      document.querySelectorAll('button.qp').forEach(b => {
+        const c = b.querySelector('.cnt');
+        if(c && c.id && c.id.startsWith(px)) b.classList.remove('active');
+      });
+      apply();
+      const tableSec = document.getElementById((px || '') + 'tasks') || document.querySelector(`section[id$="tasks"]`);
+      if(tableSec) tableSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast(`Filtered to ${tile.querySelector('.dq-label').textContent.toLowerCase()}`);
+    });
+  });
+
   // CSV download
   const csvBtn = $g('btnCSV');
   if(csvBtn){
@@ -1839,6 +2535,47 @@ function drawSprintCharts(D, px){
   const $c = id => document.getElementById(px + id);
   const setters = () => (D.__setters && D.__setters[px || 'single']) || null;
   const markClickable = (el) => { if(el) el.parentElement && el.parentElement.classList.add('clickable'); };
+
+  // Burn-down chart
+  if($c('cBurnDown')){
+    const series = buildBurnDownSeries(D);
+    if(series){
+      const todayIdx = series.todayIdx;
+      // Colour the "Actual" line based on whether we're above (behind) or below (ahead) ideal at today
+      let actualColour = '#2563eb';
+      if(todayIdx >= 0){
+        const idealNow = series.ideal[todayIdx];
+        const actualNow = series.actual[todayIdx];
+        if(actualNow > idealNow + 0.5) actualColour = '#dc2626';      // behind → red
+        else if(actualNow < idealNow - 0.5) actualColour = '#16a34a'; // ahead → green
+      }
+      const datasets = [
+        { label: 'Ideal', data: series.ideal, borderColor: '#94a3b8', borderDash: [4,4], pointRadius: 0, tension: 0, fill: false, borderWidth: 2 },
+        { label: 'Actual', data: series.actual, borderColor: actualColour, backgroundColor: actualColour, pointRadius: 2, tension: 0.1, fill: false, borderWidth: 2.5 },
+      ];
+      // Mark "today" with a tall vertical strip via an annotation-like dataset
+      if(todayIdx >= 0){
+        const yMax = Math.max(...series.ideal, ...series.actual);
+        const todayData = series.labels.map((_, i) => i === todayIdx ? yMax : null);
+        datasets.push({ label: 'Today', data: todayData, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.35)', borderWidth: 0, pointRadius: 6, pointStyle: 'rectRot', showLine: false });
+      }
+      new Chart($c('cBurnDown'), {
+        type: 'line',
+        data: { labels: series.labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          scales: {
+            x: { ticks: { autoSkip: true, maxTicksLimit: 10, font: { size: 10 } } },
+            y: { beginAtZero: true, title: { display: true, text: 'Hours remaining' } }
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            title: (items) => items[0] ? new Date(items[0].label + 'T00:00').toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short'}) : ''
+          } } }
+        }
+      });
+    }
+  }
 
   // Status doughnut → clicking a slice filters the task table by status
   if($c('cStatus')){
@@ -1989,9 +2726,17 @@ function renderMulti(payloads){
     a_total_planned:    payloads.reduce((s,p)=>s+p.totals.total_planned,0),
     b_total_logged:     payloads.reduce((s,p)=>s+p.totals.total_actual,0),
     c_planned_completed: payloads.reduce((s,p)=>s+p.totals.c_planned_completed,0),
+    d_actual_completed:  payloads.reduce((s,p)=>s+p.totals.d_actual_completed,0),
     g_tentative_to_finish: payloads.reduce((s,p)=>s+p.totals.g_tentative_to_finish,0),
   };
-  allAgg.d_total_logged   = allAgg.b_total_logged;       // (d) ≡ (b)
+  // Apply the single global override (if set) to (a); (e) and (f) recompute against the override.
+  const _ovr = state.totalPlannedOverride;
+  if(_ovr !== null && _ovr !== undefined && !isNaN(_ovr)){
+    allAgg.a_auto_total      = allAgg.a_total_planned; // remember the auto sum for tooltips
+    allAgg.a_total_planned   = +_ovr;
+  } else {
+    allAgg.a_auto_total      = allAgg.a_total_planned;
+  }
   allAgg.e_remaining_onhand  = allAgg.a_total_planned - allAgg.b_total_logged;
   allAgg.f_planned_remaining = allAgg.a_total_planned - allAgg.c_planned_completed;
   // Percentage helpers for Consolidated Summary KPIs
@@ -2101,20 +2846,16 @@ function renderMulti(payloads){
     ? `<div class="infobox"><strong>Future sprints excluded from aggregates:</strong> ${futurePayloads.map(p => escapeHtml(p.short)).join(', ')} — these sprints have not started yet (no logged effort and/or start date is in the future). They are still listed in the per-sprint comparison tables below for reference, but are excluded from the Consolidated Summary and Resource Utilisation roll-ups.</div>`
     : '';
 
-  // Banner for partial selection
-  const partialBanner = !isAllSprints
-    ? `<div class="alertbox"><strong>Partial selection:</strong> ${state.selectedMilestones.length} of ${state.milestones.length} sprint(s) selected. The <em>Consolidated Executive Summary</em> is only shown when all sprints found in the task file are selected. Cross-sprint comparison tables below still reflect just the selected sprints.</div>`
-    : '';
+  // Consolidated Summary now renders for ANY multi-sprint selection (no isAllSprints gate)
 
   // Comparison sections
   let html = `<div class="view-pane active" id="dashView">
-    ${partialBanner}
     ${futureBanner}
-    ${isAllSprints ? `
+    ${true ? `
     <section id="cExec">
       <h2>${nextSec()}. Consolidated Executive Summary</h2>
-      <div class="lede">Cross-sprint delivery overview for all ${payloads.length} sprint(s). KPIs roll up across every selected sprint (past, current, and future). The Sprint Health badge alone is computed only on past + current sprints, since future sprints have no health data yet.</div>
-      <h3 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Delivery overview (all ${payloads.length} selected sprint${payloads.length === 1 ? '' : 's'})</h3>
+      <div class="lede">Cross-sprint delivery overview for the ${payloads.length} selected sprint(s). KPIs roll up across every selected sprint (past, current, and future). The Sprint Health badge alone is computed only on past + current sprints, since future sprints have no health data yet.</div>
+      <h3 style="margin:0 0 8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Delivery overview (the ${payloads.length} selected sprint${payloads.length === 1 ? '' : 's'})</h3>
       <div class="kpis">
         <div class="kpi ${healthCls}"><div class="l">Overall health</div><div class="v">${overallHealth}</div><div class="d">Worst-of-${pcPayloads.length} (past + current)</div></div>
         <div class="kpi ${allTaskPct >= 100 ? 'green' : allTaskPct >= 80 ? 'amber' : 'red'}"><div class="l">Task completion</div><div class="v">${allTaskPct.toFixed(1)}%</div><div class="d">${allAgg.delivered} of ${allAgg.total_tasks} delivered</div></div>
@@ -2123,12 +2864,30 @@ function renderMulti(payloads){
         <div class="kpi ${allAgg.bug_open > 0 ? 'red' : 'green'}"><div class="l">Open bugs</div><div class="v num">${allAgg.bug_open}</div><div class="d">${allAgg.bug_total} total / ${allAgg.bug_closed} closed</div></div>
         <div class="kpi"><div class="l">Bug closure</div><div class="v">${allBugPct == null ? 'N/A' : allBugPct.toFixed(1) + '%'}</div></div>
       </div>
-      <h3 style="margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Effort &amp; burn-down (all ${payloads.length} selected sprint${payloads.length === 1 ? '' : 's'})</h3>
+      <h3 style="margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Effort &amp; burn-down (the ${payloads.length} selected sprint${payloads.length === 1 ? '' : 's'})</h3>
       <div class="kpis">
-        <div class="kpi blue"><div class="l">(a) Planned hours</div><div class="v num">${allAgg.a_total_planned.toFixed(1)}</div><div class="d">Sum across all selected sprints</div></div>
+        ${(() => {
+          // Single global override applies to the consolidated (a)
+          const ovr = state.totalPlannedOverride;
+          const hasOverride = (ovr !== null && ovr !== undefined && !isNaN(ovr));
+          const displayed = allAgg.a_total_planned; // already reflects override if set
+          const autoSum = allAgg.a_auto_total;
+          const sub = hasOverride
+            ? `Manual · auto would be ${autoSum.toFixed(1)}`
+            : 'Sum across all selected sprints';
+          const title = hasOverride
+            ? `(a) = manual override = ${displayed.toFixed(1)} hrs. Auto sum across the selected sprints would be ${autoSum.toFixed(1)} hrs.`
+            : '(a) = sum of each sprint\'s auto-calculated planned hours.';
+          return `<div class="kpi blue" title="${escapeHtml(title)}">
+            ${hasOverride ? '<span class="kpi-override-mark" title="Manually overridden">✎</span>' : ''}
+            <div class="l">(a) Planned hours${hasOverride ? ' <span style="color:var(--amber);font-size:9px">(override)</span>' : ''}</div>
+            <div class="v num">${displayed.toFixed(1)}</div>
+            <div class="d">${sub}</div>
+          </div>`;
+        })()}
         <div class="kpi blue"><div class="l">(b) Logged hours</div><div class="v num">${allAgg.b_total_logged.toFixed(2)}</div><div class="d">Total logged to date</div></div>
         <div class="kpi green"><div class="l">(c) Planned of completed</div><div class="v num">${allAgg.c_planned_completed.toFixed(1)}</div><div class="d">Planned hours of completed tasks</div></div>
-        <div class="kpi green"><div class="l">(d) Time taken so far</div><div class="v num">${allAgg.d_total_logged.toFixed(2)}</div><div class="d">Total logged hours</div></div>
+        <div class="kpi green"><div class="l">(d) Actual time taken till date</div><div class="v num">${allAgg.d_actual_completed.toFixed(2)}</div><div class="d">Actual hours on completed tasks</div></div>
         <div class="kpi ${allAgg.e_remaining_onhand >= 0 ? '' : 'red'}"><div class="l">(e) Hours on hand</div><div class="v num">${allAgg.e_remaining_onhand.toFixed(2)}</div><div class="d">a − b</div></div>
         <div class="kpi"><div class="l">(f) Planned hours remaining</div><div class="v num">${allAgg.f_planned_remaining.toFixed(1)}</div><div class="d">a − c</div></div>
         <div class="kpi amber"><div class="l">(g) Tentative time to finish</div><div class="v num">${allAgg.g_tentative_to_finish.toFixed(1)}</div><div class="d">Σ max(0, plan−actual) on open</div></div>
@@ -2150,7 +2909,7 @@ function renderMulti(payloads){
         </div>
       </div>
       <div class="narrative" style="margin-top:18px">
-        <p><strong>Management read:</strong> Across all ${payloads.length} selected sprint(s), ${allAgg.delivered} of ${allAgg.total_tasks} tasks have been delivered (${allTaskPct.toFixed(1)}%). Total project budget is ${allAgg.a_total_planned.toFixed(0)} planned hrs; ${allAgg.b_total_logged.toFixed(0)} hrs have been logged so far, leaving ${allAgg.e_remaining_onhand.toFixed(0)} hrs on hand and ${allAgg.f_planned_remaining.toFixed(0)} planned hrs reserved for not-yet-delivered tasks. ${allAgg.g_tentative_to_finish > 0 ? 'Open work is estimated to need approximately ' + allAgg.g_tentative_to_finish.toFixed(0) + ' more hours to close.' : 'No open tasks remain.'} ${allAgg.moved} task(s) were re-scoped, and ${allAgg.bug_total} bug(s) were filed (${allAgg.bug_open} still open). Overall delivery health, computed only on the ${pcPayloads.length} past + current sprint(s), is <strong>${overallHealth}</strong>.</p>
+        <p><strong>Management read:</strong> Across all ${payloads.length} selected sprint(s), ${allAgg.delivered} of ${allAgg.total_tasks} tasks have been delivered (${allTaskPct.toFixed(1)}%). Total project budget is ${allAgg.a_total_planned.toFixed(0)} planned hrs; ${allAgg.b_total_logged.toFixed(0)} hrs have been logged so far, leaving ${allAgg.e_remaining_onhand.toFixed(0)} hrs on hand and ${allAgg.f_planned_remaining.toFixed(0)} planned hrs reserved for not-yet-delivered tasks. Completed work consumed ${allAgg.d_actual_completed.toFixed(0)} actual hrs against ${allAgg.c_planned_completed.toFixed(0)} planned for those tasks${allAgg.c_planned_completed > 0 ? ` (${((allAgg.d_actual_completed/allAgg.c_planned_completed)*100).toFixed(0)}% of plan)` : ''}. ${allAgg.g_tentative_to_finish > 0 ? 'Open work is estimated to need approximately ' + allAgg.g_tentative_to_finish.toFixed(0) + ' more hours to close.' : 'No open tasks remain.'} ${allAgg.moved} task(s) were re-scoped, and ${allAgg.bug_total} bug(s) were filed (${allAgg.bug_open} still open). Overall delivery health, computed only on the ${pcPayloads.length} past + current sprint(s), is <strong>${overallHealth}</strong>.</p>
       </div>
     </section>
     ` : ''}
@@ -2207,37 +2966,6 @@ function renderMulti(payloads){
         </table>
       </div>
       <div class="footnote">Bugs (T/O/C) = Total / Open / Closed in-window. Variance = Planned − Actual (positive = under).</div>
-    </section>
-
-    <section id="cPvA">
-      <h2>${nextSec()}. Sprint-Wise Planned vs Actual Comparison</h2>
-      <div class="lede">Effort reconciliation, sprint by sprint.</div>
-      <div class="tablewrap">
-        <table><thead><tr>
-          <th>Sprint</th><th>Tasks</th><th>Planned&nbsp;hrs</th><th>Actual&nbsp;hrs</th>
-          <th>Variance</th><th>Util %</th><th>Trend vs prev</th>
-        </tr></thead>
-        <tbody>
-          ${payloads.map((p,i) => {
-            const t = p.totals;
-            const variance = (t.total_planned - t.total_actual).toFixed(1);
-            const trend = trends[i].hourPct;
-            const trendHtml = trend == null ? '<span class="mute">—</span>' :
-              trend > 1 ? `<span class="trend-up">▲ +${trend.toFixed(1)} pp</span>` :
-              trend < -1 ? `<span class="trend-down">▼ ${trend.toFixed(1)} pp</span>` :
-              `<span class="trend-flat">▬ flat</span>`;
-            return `<tr>
-              <td><strong>${escapeHtml(p.sprintName)}</strong></td>
-              <td class="num">${t.total_tasks}</td>
-              <td class="num">${t.total_planned.toFixed(1)}</td>
-              <td class="num">${t.total_actual.toFixed(2)}</td>
-              <td class="num"><span class="badge b-${variance >= 0 ? 'green' : 'red'}">${variance}</span></td>
-              <td class="num">${t.hour_pct.toFixed(1)}%</td>
-              <td>${trendHtml}</td>
-            </tr>`;
-          }).join('')}
-        </tbody></table>
-      </div>
     </section>
 
     <section id="cTaskBug">
@@ -2335,6 +3063,33 @@ function renderMulti(payloads){
     <section id="cRisks">
       <h2>${nextSec()}. Overall Risks, Blockers &amp; Dependencies</h2>
       <div class="lede">Aggregate of repeated patterns across the selected sprints.</div>
+      ${(() => {
+        const chains = buildCarryoverChains(payloads);
+        if(chains.length === 0){
+          return `<div class="chain-panel clean"><h3><span class="chain-icon">✓</span> Chronic carry-overs</h3><div class="chain-empty">No tasks were re-scoped across more than one sprint — scope adjustments appear isolated, not systemic. 🎉</div></div>`;
+        }
+        return `<div class="chain-panel">
+          <h3><span class="chain-icon">!</span> Chronic carry-overs — tasks re-scoped across ${chains.length === 1 ? '1 chain' : chains.length + ' chains'}</h3>
+          <div class="footnote" style="margin:0 0 8px">A task that gets moved between sprints repeatedly is a chronic problem child. ${chains.length} task(s) below have been re-scoped at least twice. Consider killing, splitting, or radically re-scoping.</div>
+          <div class="chain-list">
+            ${chains.map(c => {
+              const stops = c.chain.map(s => escapeHtml(s)).join('<span class="arr">→</span>');
+              let landingHtml = '';
+              if(c.landing) landingHtml = `<span class="landed">Landed in ${escapeHtml(c.landing.sprint)} (${escapeHtml(c.landing.status || 'unknown')})</span>`;
+              else if(c.isAlive) landingHtml = `<span class="alive">Still moving</span>`;
+              const severe = c.moveCount >= 3 ? 'severe' : '';
+              return `<div class="chain-row">
+                <span class="moves ${severe}">${c.moveCount}× moved</span>
+                <div>
+                  <div class="name">${escapeHtml(c.name)}</div>
+                  <div class="stops">${stops}${landingHtml}</div>
+                </div>
+                <span></span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      })()}
       <div class="tablewrap">
         <table><thead><tr><th>Category</th><th>Detail</th></tr></thead>
         <tbody>
@@ -2465,6 +3220,8 @@ function renderMulti(payloads){
   }));
   setSprintMeta(0);
 
+  wireCollapsibleSections();
+  wireCollapseAllButton();
   attachBackLink();
 }
 
