@@ -51,6 +51,28 @@
   tryLoad();
 })();
 </script>
+<script>
+// Resilient d3.js loader (used for the packed-bubble chart of planned hours per task).
+(function(){
+  var sources = [
+    'https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js',
+    'https://unpkg.com/d3@7.8.5/dist/d3.min.js'
+  ];
+  var i = 0;
+  function tryLoad(){
+    if(typeof d3 !== 'undefined') return;
+    if(i >= sources.length){ window.__d3LoadFailed = true; return; }
+    var s = document.createElement('script');
+    s.src = sources[i++];
+    s.async = false;
+    s.onload  = function(){ if(typeof d3 === 'undefined') tryLoad(); };
+    s.onerror = tryLoad;
+    document.head.appendChild(s);
+  }
+  tryLoad();
+})();
+</script>
 <style>
   :root{
     --bg:#f6f7f9; --surface:#fff; --ink:#0f172a; --muted:#64748b; --line:#e5e7eb;
@@ -110,6 +132,22 @@
   /* Charts */
   .chartwrap{position:relative;height:280px}
   .chartwrap.tall{height:340px}
+
+  /* Bubble chart (d3 pack layout — task planned hours) */
+  .bubble-wrap{position:relative;width:100%;background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:14px 14px 10px}
+  .bubble-wrap .b-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .bubble-wrap .b-sub{font-size:11px;color:var(--muted);margin-bottom:8px}
+  .bubble-svg{display:block;width:100%;height:420px}
+  .bubble-svg text{pointer-events:none;font-family:-apple-system,Segoe UI,Roboto,Inter,sans-serif;fill:#0f172a;font-weight:500}
+  .bubble-svg circle{stroke:rgba(255,255,255,.85);stroke-width:1.5;transition:opacity .15s ease}
+  .bubble-svg circle:hover{opacity:.85;cursor:pointer}
+  .bubble-empty{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:12px;background:#fff;border:1px dashed var(--line);border-radius:8px;text-align:center;padding:14px}
+  .bubble-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;justify-content:center;font-size:11px;color:var(--slate)}
+  .bubble-legend .bl-item{display:inline-flex;align-items:center;gap:6px}
+  .bubble-legend .bl-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
+  .bubble-tip{position:absolute;pointer-events:none;background:#0f172a;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,.18);z-index:60;opacity:0;transition:opacity .12s ease;max-width:260px;line-height:1.4}
+  .bubble-tip strong{color:#fff}
+  .bubble-tip .tip-line{display:block;margin-top:2px;color:#cbd5e1;font-size:11px}
 
   /* Table */
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -1266,7 +1304,13 @@ function rebuildSprintList(){
   updateMsCount();
   // project autofill
   const pn = document.getElementById('projectName');
-  if(!pn.value && projects.size > 0) pn.value = [...projects][0];
+  if(!pn.value && projects.size > 0){
+    pn.value = [...projects][0];
+    state.projectName = pn.value;
+  }
+  // Always keep state.projectName in sync with whatever is currently in the input,
+  // in case the user edited it before more files were uploaded (or didn't edit at all).
+  if(pn.value) state.projectName = pn.value;
 }
 
 function updateMsCount(){
@@ -1343,7 +1387,15 @@ function updateReady(){
   else msg.textContent = `Ready: ${state.selectedMilestones.length} sprints selected → comparison dashboard + per-sprint detail. ${fileSummary()}.`;
 }
 
-document.getElementById('continueBtn').addEventListener('click', () => generateReport());
+document.getElementById('continueBtn').addEventListener('click', () => {
+  // Final sync of inputs into state in case the user never edited them (so the
+  // 'input' event never fired and state.* still holds the initial empty value).
+  const pnEl = document.getElementById('projectName');
+  const rtEl = document.getElementById('reportTitle');
+  if(pnEl && pnEl.value) state.projectName = pnEl.value.trim();
+  if(rtEl && rtEl.value) state.reportTitle = rtEl.value.trim();
+  generateReport();
+});
 
 /* ============================================================
    BUILD PAYLOAD FOR ONE SPRINT
@@ -1667,6 +1719,7 @@ function renderSingle(D){
   const healthClass = D.health === 'GREEN' ? 'green' : (D.health === 'AMBER' ? 'amber' : 'red');
 
   document.getElementById('reportHeader').innerHTML = `
+    <div class="proj-name" style="font-size:13px;font-weight:500;color:#cbd5e1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Project: ${escapeHtml(M.project)}</div>
     <h1>${escapeHtml(M.title)}</h1>
     <div class="sub">${escapeHtml(M.project)} &middot; ${escapeHtml(D.sprintName)} &middot; generated ${escapeHtml(M.reportDate)}</div>
     <div class="pillrow">
@@ -1689,8 +1742,23 @@ function renderSingle(D){
     </div>`;
 
   const body = document.getElementById('reportBody');
-  body.innerHTML = renderSprintSections(D, '', true);
+  // Show the bubble chart only when the selected sprint is the currently active one.
+  const showBubble = (D.phase === 'current');
+  const bubbleSectionHtml = showBubble ? `
+    <section id="bubbleSection">
+      <h2>Planned Hours Distribution by Task — Current Sprint</h2>
+      <div class="lede">Per-task planned-hours distribution for the <strong>currently active sprint</strong>. <strong>Bubble size = planned hours</strong>; <strong>color = hour bucket</strong> (green ≤ 2h … red &gt; 15h). Hover any bubble for full details. Re-scoped (CLOSED – MOVED) tasks are excluded.</div>
+      <div class="bubble-wrap">
+        <div class="b-title">
+          <span>${escapeHtml(D.sprintName)} <span class="badge b-${D.health === 'GREEN' ? 'green' : D.health === 'AMBER' ? 'amber' : 'red'}" style="margin-left:6px">${D.health || '—'}</span> <span class="badge b-blue" style="margin-left:6px;background:var(--blue-bg);color:var(--blue)">Active</span></span>
+          <span class="b-sub">${(D.tasks || []).filter(t => !t.moved_to && (t.planned || 0) > 0).length} task(s) with planned hours &middot; ${D.totals.total_planned.toFixed(1)}h planned${D.totals.moved_count ? ' &middot; ' + D.totals.moved_count + ' re-scoped (excluded)' : ''}</span>
+        </div>
+        <div class="bubble-svg-host" id="bsvgM_0" style="position:relative"></div>
+      </div>
+    </section>` : '';
+  body.innerHTML = bubbleSectionHtml + renderSprintSections(D, '', true);
   populateSprintSections(D, '');
+  if(showBubble) renderMultiBubbleCharts([D]);
   wireCollapsibleSections();
   wireCollapseAllButton();
   attachBackLink();
@@ -2811,6 +2879,7 @@ function renderMulti(payloads){
   const healthCls = overallHealth === 'GREEN' ? 'green' : overallHealth === 'AMBER' ? 'amber' : 'red';
 
   document.getElementById('reportHeader').innerHTML = `
+    <div class="proj-name" style="font-size:13px;font-weight:500;color:#cbd5e1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Project: ${escapeHtml(M.project)}</div>
     <h1>${escapeHtml(M.title)}</h1>
     <div class="sub">${escapeHtml(M.project)} &middot; ${payloads.length} sprints &middot; generated ${escapeHtml(M.reportDate)}</div>
     <div class="pillrow">
@@ -2967,6 +3036,33 @@ function renderMulti(payloads){
       </div>
       <div class="footnote">Bugs (T/O/C) = Total / Open / Closed in-window. Variance = Planned − Actual (positive = under).</div>
     </section>
+
+    ${(() => {
+      // Only render the bubble chart for the currently active sprint.
+      const currentPayload = payloads.find(p => p.phase === 'current');
+      if(!currentPayload){
+        return `
+        <section id="cBubble">
+          <h2>${nextSec()}. Planned Hours Distribution by Task</h2>
+          <div class="lede">This chart shows the per-task planned-hours distribution for the <strong>currently active sprint</strong>. Bubble size = planned hours; color = hour range (green ≤ 2h … red &gt; 15h).</div>
+          <div class="bubble-empty">No currently active sprint in the selected set. Bubble chart is shown only for sprints whose date window contains today.</div>
+        </section>`;
+      }
+      const cls = currentPayload.health === 'GREEN' ? 'green' : currentPayload.health === 'AMBER' ? 'amber' : 'red';
+      const scopedCount = (currentPayload.tasks || []).filter(t => !t.moved_to && (t.planned || 0) > 0).length;
+      return `
+      <section id="cBubble">
+        <h2>${nextSec()}. Planned Hours Distribution by Task — Current Sprint</h2>
+        <div class="lede">Per-task planned-hours distribution for the <strong>currently active sprint</strong> only. <strong>Bubble size = planned hours</strong>; <strong>color = hour bucket</strong> (green ≤ 2h … red &gt; 15h). Hover any bubble for full task details. Re-scoped (CLOSED – MOVED) tasks are excluded.</div>
+        <div class="bubble-wrap">
+          <div class="b-title">
+            <span>${escapeHtml(currentPayload.short)} <span class="badge b-${cls}" style="margin-left:6px">${currentPayload.health}</span> <span class="badge b-blue" style="margin-left:6px;background:var(--blue-bg);color:var(--blue)">Active</span></span>
+            <span class="b-sub">${scopedCount} task(s) with planned hours &middot; ${currentPayload.totals.total_planned.toFixed(1)}h planned${currentPayload.totals.moved_count ? ' &middot; ' + currentPayload.totals.moved_count + ' re-scoped (excluded)' : ''}</span>
+          </div>
+          <div class="bubble-svg-host" id="bsvgM_0" style="position:relative"></div>
+        </div>
+      </section>`;
+    })()}
 
     <section id="cTaskBug">
       <h2>${nextSec()}. Sprint-Wise Task and Bug Summary</h2>
@@ -3180,6 +3276,9 @@ function renderMulti(payloads){
 
   // Comparison charts (dashboard view is active by default — safe to draw immediately)
   drawComparisonCharts(payloads);
+  // Bubble chart — only for the currently active sprint, in the dashboard view
+  const currentForBubble = payloads.find(p => p.phase === 'current');
+  if(currentForBubble) renderMultiBubbleCharts([currentForBubble]);
 
   // Tab switching
   const tabDashboard = document.getElementById('tabDashboard');
@@ -3223,6 +3322,166 @@ function renderMulti(payloads){
   wireCollapsibleSections();
   wireCollapseAllButton();
   attachBackLink();
+}
+
+/* ============================================================
+   PACKED BUBBLE CHART — planned hours per task
+   Colour is by HOUR BUCKET so size-and-colour both encode risk:
+     < 2 h   → green   (small, low-risk)
+     2 – 5 h → lime
+     5 – 8 h → amber
+     8 – 15 h → orange
+     > 15 h  → red     (large, high-risk — likely needs to be split)
+   ============================================================ */
+const HOUR_BUCKETS = [
+  { id: 'lt2',   label: '< 2 h',     test: (h) => h < 2,             color: '#16a34a' },
+  { id: '2to5',  label: '2 – 5 h',   test: (h) => h >= 2 && h < 5,   color: '#84cc16' },
+  { id: '5to8',  label: '5 – 8 h',   test: (h) => h >= 5 && h < 8,   color: '#f59e0b' },
+  { id: '8to15', label: '8 – 15 h',  test: (h) => h >= 8 && h < 15,  color: '#f97316' },
+  { id: 'gt15',  label: '> 15 h',    test: (h) => h >= 15,           color: '#dc2626' }
+];
+function bucketForHours(h){
+  return HOUR_BUCKETS.find(b => b.test(h)) || HOUR_BUCKETS[0];
+}
+function colorForHours(h){
+  return bucketForHours(h).color;
+}
+
+function renderMultiBubbleCharts(payloads, attempt){
+  attempt = attempt || 0;
+  // d3 is loaded async — if it isn't ready yet, retry briefly before giving up.
+  if(typeof d3 === 'undefined'){
+    if(attempt < 30 && !window.__d3LoadFailed){
+      setTimeout(() => renderMultiBubbleCharts(payloads, attempt + 1), 200);
+      return;
+    }
+    payloads.forEach((p, i) => {
+      const host = document.getElementById(`bsvgM_${i}`);
+      if(host) host.innerHTML = '<div class="bubble-empty">Chart library (d3) failed to load. Please check your network connection and refresh.</div>';
+    });
+    return;
+  }
+
+  payloads.forEach((p, i) => {
+    const host = document.getElementById(`bsvgM_${i}`);
+    if(!host) return;
+    const tasks = (p.tasks || []).filter(t => !t.moved_to && (t.planned || 0) > 0);
+    if(tasks.length === 0){
+      host.innerHTML = '<div class="bubble-empty">No in-scope tasks with planned hours in this sprint.</div>';
+      return;
+    }
+    renderOneBubbleChart(host, tasks);
+  });
+}
+
+function renderOneBubbleChart(host, tasks){
+  // Compute layout with d3.pack
+  const width = Math.max(400, host.clientWidth || 800);
+  const height = 420;
+  const root = d3.hierarchy({children: tasks}).sum(d => Math.max(0.01, d.planned || 0));
+  d3.pack().size([width, height - 6]).padding(4)(root);
+
+  // Build SVG
+  host.innerHTML = '';
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('class', 'bubble-svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  host.appendChild(svg);
+
+  // Tooltip element
+  const tip = document.createElement('div');
+  tip.className = 'bubble-tip';
+  host.appendChild(tip);
+
+  // Track bucket counts to show below the legend
+  const bucketCounts = {};
+  HOUR_BUCKETS.forEach(b => bucketCounts[b.id] = 0);
+
+  root.leaves().forEach(leaf => {
+    const d = leaf.data;
+    const planned = d.planned || 0;
+    const bucket = bucketForHours(planned);
+    bucketCounts[bucket.id]++;
+    const color = bucket.color;
+
+    const g = document.createElementNS(svgNS, 'g');
+    g.setAttribute('class', 'bubble-group');
+    g.setAttribute('transform', `translate(${leaf.x},${leaf.y})`);
+    svg.appendChild(g);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('r', leaf.r);
+    circle.setAttribute('fill', color);
+    circle.setAttribute('fill-opacity', '0.88');
+    g.appendChild(circle);
+
+    // Hover tooltip
+    g.addEventListener('mouseenter', () => {
+      tip.innerHTML = `<strong>${escapeHtml(d.name || 'Task')}</strong>
+        <span class="tip-line">Planned: ${planned.toFixed(1)} h &middot; Logged: ${(d.actual || 0).toFixed(1)} h</span>
+        <span class="tip-line">Bucket: ${escapeHtml(bucket.label)} &middot; Task List: ${escapeHtml(d.tasklist || 'Uncategorised')}</span>
+        <span class="tip-line">Owner: ${escapeHtml(d.owner || 'Not Assigned')} &middot; Status: ${escapeHtml(d.status || '—')}</span>`;
+      tip.style.opacity = '1';
+    });
+    g.addEventListener('mousemove', (e) => {
+      const rect = host.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const tw = tip.offsetWidth || 200;
+      const th = tip.offsetHeight || 60;
+      let tx = x + 14;
+      let ty = y - th - 12;
+      if(tx + tw > rect.width - 4) tx = Math.max(4, x - tw - 14);
+      if(ty < 4) ty = y + 18;
+      tip.style.left = tx + 'px';
+      tip.style.top = ty + 'px';
+    });
+    g.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+
+    // Labels — only render if the bubble is large enough to host them
+    if(leaf.r >= 22){
+      const taskName = String(d.name || '');
+      const maxChars = Math.max(6, Math.floor(leaf.r / 3.5));
+      const display = taskName.length > maxChars ? taskName.slice(0, maxChars - 1) + '…' : taskName;
+      const nameSize = Math.min(13, Math.max(9, Math.round(leaf.r / 5)));
+      const hourSize = Math.min(12, Math.max(9, Math.round(leaf.r / 5.5)));
+      // Choose label colour for contrast against the bucket fill.
+      // Lighter buckets (lime / amber) read better with dark text;
+      // darker buckets (orange / red / green) read better with white text.
+      const lightBg = (bucket.id === '2to5' || bucket.id === '5to8');
+      const labelFill = lightBg ? '#0f172a' : '#ffffff';
+      const t1 = document.createElementNS(svgNS, 'text');
+      t1.setAttribute('text-anchor', 'middle');
+      t1.setAttribute('y', -2);
+      t1.setAttribute('font-size', nameSize);
+      t1.setAttribute('fill', labelFill);
+      t1.textContent = display;
+      g.appendChild(t1);
+      const t2 = document.createElementNS(svgNS, 'text');
+      t2.setAttribute('text-anchor', 'middle');
+      t2.setAttribute('y', nameSize + 4);
+      t2.setAttribute('font-size', hourSize);
+      t2.setAttribute('fill', labelFill);
+      t2.setAttribute('fill-opacity', '0.9');
+      t2.textContent = planned.toFixed(1) + 'h';
+      g.appendChild(t2);
+    }
+  });
+
+  // Legend — fixed hour buckets, with counts of tasks in each bucket
+  const legend = document.createElement('div');
+  legend.className = 'bubble-legend';
+  HOUR_BUCKETS.forEach(b => {
+    const n = bucketCounts[b.id];
+    const item = document.createElement('span');
+    item.className = 'bl-item';
+    if(n === 0) item.style.opacity = '0.45';
+    item.innerHTML = `<span class="bl-dot" style="background:${b.color}"></span>${escapeHtml(b.label)} <span style="color:var(--muted);font-size:10px">(${n})</span>`;
+    legend.appendChild(item);
+  });
+  host.appendChild(legend);
 }
 
 function drawComparisonCharts(payloads){
